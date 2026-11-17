@@ -184,7 +184,9 @@ function renderAll(){
   if (!D) return;
   renderToday(); renderPlanner(); renderMoney(); renderKhums(); renderWajibat(); renderWasiyat(); renderSettingsChip();
 }
-const tile = (label, val, sub, cls, href) => `<${href?'a href="'+href+'"':'div'} class="tile ${cls||""}"><span>${label}</span><b class="${String(val).length > 9 && !/^<small/.test(val) ? "word" : ""}">${val}</b><span>${sub||""}</span></${href?"a":"div"}>`;
+/* tags: short facts as chips. Items are HTML strings or [html, tone] */
+const tags = items => '<span class="tags">' + items.filter(Boolean).map(x => Array.isArray(x) ? `<span class="tag ${x[1]||""}">${x[0]}</span>` : `<span class="tag">${x}</span>`).join("") + "</span>";
+const tile = (label, val, sub, cls, href) => `<${href?'a href="'+href+'"':'div'} class="tile ${cls||""}"><span>${label}</span><b class="${String(val).length > 9 && !/^<small/.test(val) ? "word" : ""}">${val}</b>${Array.isArray(sub) ? tags(sub) : `<span>${sub||""}</span>`}</${href?"a":"div"}>`;
 /* progress ring: gradient arc with a glowing head that races from its last value to the new one */
 const RING_LAST = {};
 const ringSvg = (frac, color, size, track, inner, key, color2) => {
@@ -223,7 +225,7 @@ function qazaFinish(perDay){ const c = D.wajibat.qaza.counts||{}; const days = M
 function khumsStatus(kh){
   if (kh.unpaid.length) return {cls:"warn", word:"Unpaid", short:"Owed: " + kh.unpaid.map(y => y.year + " " + fmtC(y.unpaid, y.c)).join(", ")};
   const due = kh.daysTo == null ? "date not set" : kh.daysTo < 0 ? "date passed, close the year" : "payable 23 Ramadan, in " + kh.daysTo + " days";
-  return {cls:"ok", word:"Nothing owed", short:due};
+  return {cls:"ok", word:"Nothing owed", short:due, tags: kh.daysTo != null && kh.daysTo >= 0 ? [["23 Ramadan","kh"], "in " + kh.daysTo + " days"] : [[due,"warn"]]};
 }
 function lastYearNote(kh){ const y = kh.years[0]; if (!y) return ""; return y.year + ": " + (!(y.khumsDue > 0) ? "none was due" : y.unpaid <= 0.5 ? "paid in full" : fmtC(y.unpaid, y.c) + " unpaid"); }
 function usuals(){
@@ -258,11 +260,11 @@ function renderToday(){
   const rem = k.allowToday - k.spentToday, frac = k.allowToday > 0 ? rem / k.allowToday : 0;
   const now = new Date();
   $("todayDate").textContent = now.toLocaleDateString("en-GB", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
-  $("todayCycle").textContent = "Cycle day " + Math.min(k.len, dayDiff(cfg.cycle.start, todayIso()) + 1) + " of " + k.len + " · pay " + nice(cfg.cycle.nextPay);
+  $("todayCycle").innerHTML = tags(["Cycle day " + Math.min(k.len, dayDiff(cfg.cycle.start, todayIso()) + 1) + " of " + k.len, ["Pay " + nice(cfg.cycle.nextPay), "date"]]);
   const rc = rem >= k.allowToday * 0.25 ? "#5ccbe6" : rem >= 0 ? "#fbbf24" : "#f87171";
   $("todayHero").innerHTML = ringSvg(frac, rc, 148, "rgba(255,255,255,.12)", `<small>today</small>${Math.max(0, Math.round(frac*100))}%`, "today", rem >= k.allowToday * 0.25 ? "#b4d65c" : rem >= 0 ? "#f0956a" : "#e08ae3") +
     `<div class="hero-copy"><span class="eyebrow">Safe to spend today</span><b class="big">PKR ${fmt(Math.max(0, rem))}</b>` +
-    `<span class="soft">PKR ${fmt(k.left)} left for the cycle · PKR ${fmt(k.spentToday)} spent today</span>` +
+    tags([`PKR ${fmt(k.left)} left in cycle`, `PKR ${fmt(k.spentToday)} spent today`]) +
     `<span class="chip-status ${rem >= 0 ? "ok" : "bad"}" style="${rem >= 0 ? "" : "background:rgba(248,113,113,.2);color:#fca5a5"}">${rem >= 0 ? "On track" : "PKR " + fmt(-rem) + " over today"}</span></div>`;
   raceRings($("todayHero"));
   const third = pendingItems().filter(i => RELIGIOUS.includes(i.type));
@@ -270,10 +272,10 @@ function renderToday(){
   const nextBill = myBills().map(b => ({b, d: billDue(b)})).sort((a,b) => a.d.localeCompare(b.d))[0];
   const done = DAY.reduce((s,kk) => s + (prayedToday(kk) > 0 ? 1 : 0), 0);
   $("todayTiles").innerHTML =
-    tile("Qaza owed", nfEn.format(qazaTotal()), done + " of 5 prayed with today's prayers", "due", "#wajibat") +
-    tile("Khums", ks.word, ks.short, ks.cls, "#khums") +
-    tile(third.length === 1 ? third[0].type === "kaffara" ? "Kaffara" : "Dues open" : "Dues open", third.length ? "<small>PKR</small>" + fmt(kaf) : "None", third.length ? "still open" : "nothing pending", third.length ? "warn" : "ok", "#money") +
-    (nextBill ? tile("Next bill", esc(nextBill.b.name), fmtC(nextBill.b.amount, nextBill.b.currency) + " · " + nice(nextBill.d), "", "#money") : tile("Bills", "None", ""));
+    tile("Qaza owed", nfEn.format(qazaTotal()), [done + " of 5 prayed today"], "due", "#wajibat") +
+    tile("Khums", ks.word, ks.tags || ks.short, ks.cls, "#khums") +
+    tile(third.length === 1 ? third[0].type === "kaffara" ? "Kaffara" : "Dues open" : "Dues open", third.length ? "<small>PKR</small>" + fmt(kaf) : "None", [third.length ? ["Still open","warn"] : ["Nothing pending","good"]], third.length ? "warn" : "ok", "#money") +
+    (nextBill ? tile("Next bill", esc(nextBill.b.name), [fmtC(nextBill.b.amount, nextBill.b.currency), [nice(nextBill.d), "date"]], "", "#money") : tile("Bills", "None", ""));
   const qc = D.wajibat.qaza.counts || {};
   const qTile = ([kk,en,ur], small) => {
     const n = +qc[kk] || 0, p = Math.max(0, prayedToday(kk)), base = kk.replace("_q", "");
@@ -285,13 +287,13 @@ function renderToday(){
   const per = +$("qPace").value || 1, fin = qazaFinish(per);
   $("qPaceVal").textContent = per; $("qPaceDate").textContent = longDate(fin.date);
   USUALS = usuals();
-  $("usuals").innerHTML = USUALS.length ? USUALS.map((u, i) => `<button type="button" class="usual" data-usual="${i}"><span class="mchip ${u.meal}">${u.meal === "other" ? "Food" : MEALS[u.meal]}</span><b>${esc(u.vendor)}</b><span class="muted">PKR ${fmt(u.amount)} · ${u.n} orders</span></button>`).join("") : '<div class="empty">Usuals appear once you have ordered from a place twice.</div>';
+  $("usuals").innerHTML = USUALS.length ? USUALS.map((u, i) => `<button type="button" class="usual" data-usual="${i}"><span class="mchip ${u.meal}">${u.meal === "other" ? "Food" : MEALS[u.meal]}</span><b>${esc(u.vendor)}</b>${tags(["PKR " + fmt(u.amount), u.n + " orders"])}</button>`).join("") : '<div class="empty">Usuals appear once you have ordered from a place twice.</div>';
   renderAfford(); renderMealPlan();
   const tl = [];
-  tl.push({d: cfg.cycle.nextPay, cls: "", t: nice(cfg.cycle.nextPay) + " · Pay day", s: "PKR " + fmt(cfg.payAmount)});
-  F().bills.forEach(b => { const d = billDue(b); if (dayDiff(todayIso(), d) <= 35) tl.push({d, cls: b.paidBy === "mentor" ? "" : "bill", t: nice(d) + " · " + b.name, s: b.paidBy === "mentor" ? "Paid by your mentor: send him a reminder" : fmtC(b.amount, b.currency) + ", about PKR " + fmt(toPkr(b.amount, b.currency))}); });
-  if (kh.kh.next) tl.push({d: kh.kh.next, cls: "kh", t: nice(kh.kh.next) + " · 23 Ramadan", s: "Khums " + (kh.kh.label||"") + " becomes payable, about PKR " + fmt(kh.est)});
-  $("timeline").innerHTML = tl.sort((a,b) => a.d.localeCompare(b.d)).map(x => `<li><span class="rail"><span class="dot ${x.cls}"></span><i></i></span><div class="body"><b>${esc(x.t)}</b><div>${esc(x.s)}</div></div></li>`).join("");
+  tl.push({d: cfg.cycle.nextPay, cls: "", t: "Pay day", s: [["PKR " + fmt(cfg.payAmount), "good"]]});
+  F().bills.forEach(b => { const d = billDue(b); if (dayDiff(todayIso(), d) <= 35) tl.push({d, cls: b.paidBy === "mentor" ? "" : "bill", t: b.name, s: b.paidBy === "mentor" ? [["Mentor pays", "due"], "Send a reminder"] : [fmtC(b.amount, b.currency), "≈ PKR " + fmt(toPkr(b.amount, b.currency))]}); });
+  if (kh.kh.next) tl.push({d: kh.kh.next, cls: "kh", t: "23 Ramadan", s: [["Khums " + esc(kh.kh.label||"") + " payable", "kh"], "≈ PKR " + fmt(kh.est)]});
+  $("timeline").innerHTML = tl.sort((a,b) => a.d.localeCompare(b.d)).map(x => `<li><span class="rail"><span class="dot ${x.cls}"></span><i></i></span><div class="body"><b>${esc(x.t)}</b>${tags([[esc(nice(x.d)), "date"], ...x.s])}</div></li>`).join("");
 }
 /* ================= meal plan ================= */
 let mpDay = null;
@@ -329,12 +331,12 @@ function renderMealPlan(){
     const p = day[sl]; if (!p) return "";
     const e = mpEaten(day.date, sl), past = day.date < t;
     const price = (p.est ? "about " : "") + "PKR " + fmt(p.price);
-    const meta = [p.source, p.delivery ? "incl. " + p.delivery + " delivery" : "", p.tip || ""].filter(Boolean).join(" · ");
+    const metaArr = [p.source, p.delivery ? "incl. " + p.delivery + " delivery" : "", p.tip || ""].filter(Boolean);
     const act = e ? `<span class="chip-status ${e.pkr > p.price * 1.1 ? "warn" : "ok"}">Logged PKR ${fmt(e.pkr)}</span>` :
       `<button type="button" class="btn small" data-mp-log="${day.date}|${sl}">${past ? "Log it" : "Ordered"}, PKR ${fmt(p.price)}</button><button type="button" class="btn small ghost" data-open-add>Had something else</button>`;
-    return `<div class="mp-slot"><span class="mchip ${sl}">${MEALS[sl]}</span><div class="mp-what"><b>${esc(p.vendor)}</b><span>${esc(p.item)}</span><span class="muted sm">${esc(price)}${meta ? " · " + esc(meta) : ""}</span></div><div class="mp-act">${act}</div></div>`;
+    return `<div class="mp-slot"><span class="mchip ${sl}">${MEALS[sl]}</span><div class="mp-what"><b>${esc(p.vendor)}</b><span>${esc(p.item)}</span>${tags([[esc(price), "money"], ...metaArr.map(esc)])}</div><div class="mp-act">${act}</div></div>`;
   }).join("");
-  $("mpSum").innerHTML = `Planned <b class="num">PKR ${fmt(planned)}</b> · eaten so far <b class="num">PKR ${fmt(eatenActual)}</b> against PKR ${fmt(eatenPlan)} planned · still to come <b class="num">PKR ${fmt(leftPlan)}</b>`;
+  $("mpSum").innerHTML = tags([`Planned <b class="num">PKR ${fmt(planned)}</b>`, [`Eaten <b class="num">PKR ${fmt(eatenActual)}</b> of ${fmt(eatenPlan)} planned`, eatenActual > eatenPlan * 1.05 ? "warn" : "good"], `Still to come <b class="num">PKR ${fmt(leftPlan)}</b>`]);
   $("mpNote").textContent = mp.note || "";
 }
 function renderAfford(){
@@ -405,9 +407,9 @@ function renderMoney(){
   $("todayPill").innerHTML = '<span class="pill '+pill[0]+'">'+pill[1]+'</span>';
   const dTo = dayDiff(todayIso(), c.nextPay);
   $("payIn").textContent = dTo <= 0 ? "Due" : dTo + (dTo === 1 ? " day" : " days");
-  $("payDate").textContent = nice(c.nextPay) + " · PKR " + fmt(cfg.payAmount);
+  $("payDate").innerHTML = tags([[nice(c.nextPay), "date"], "PKR " + fmt(cfg.payAmount)]);
   const spentPct = c.opening > 0 ? Math.min(100, k.spent / c.opening * 100) : 0, ahead = spentPct > k.elapsed*100 + 8;
-  $("spentBar").style.width = spentPct + "%"; $("spentBar").style.background = ahead ? "var(--warn)" : "var(--accent)";
+  $("spentBar").style.width = spentPct + "%"; $("spentBar").style.background = ahead ? "linear-gradient(90deg,#f0956a,#e08ae3)" : "linear-gradient(90deg,#5ccbe6,#b4d65c)"; $("spentBar").style.minWidth = spentPct > 0 ? "8px" : "0";
   $("timeMark").style.left = (k.elapsed*100) + "%";
   $("paceText").textContent = Math.round(spentPct) + "% of the money spent, " + Math.round(k.elapsed*100) + "% of the cycle gone. " + (ahead ? "Spending is running ahead of the calendar." : "You are on pace.");
   renderMeals(k); renderChart(); renderPlan(); renderWajDues(); renderDebts(); renderBills(); renderBalances(k); renderTx(k); renderCapHint();
@@ -420,8 +422,7 @@ function renderMeals(k){
     const over = rows.filter(t => t.pkr > (caps[m]||0)).length;
     const cls = !rows.length ? "" : avg <= caps[m] ? "good" : avg <= caps[m]*1.15 ? "warn" : "bad";
     return '<div class="meal"><div class="name"><i style="background:'+MEAL_COLOR[m]+'"></i>'+MEALS[m]+'</div><div class="mid"><small>cap</small>'+fmt(caps[m]||0)+'</div>' +
-      '<div class="muted sm">'+(rows.length ? 'Avg <span class="num">'+fmt(avg)+'</span> over '+rows.length+' order'+(rows.length===1?'':'s') : 'No orders yet this cycle')+'</div>' +
-      (rows.length ? '<span class="pill '+cls+'">'+(over ? over+' over cap' : 'All within cap')+'</span>' : '') + '</div>';
+      (rows.length ? tags(['Avg <b class="num">'+fmt(avg)+'</b>', rows.length+' order'+(rows.length===1?'':'s'), [over ? over+' over cap' : 'Within cap', cls]]) : tags(['No orders yet'])) + '</div>';
   }).join("");
 }
 function foodPlan(cfg){
@@ -445,7 +446,7 @@ function renderChart(){
     const dd = parse(r.d), isT = r.d === todayIso();
     s += '<text x="'+(x+w/2)+'" y="'+(H-B+15)+'" text-anchor="middle" font-size="10.5" fill="'+(isT?'var(--fg)':'var(--muted)')+'" font-weight="'+(isT?'700':'400')+'">'+dd.getDate()+'</text>';
     if (i === 0 || dd.getDate() === 1) s += '<text x="'+(x+w/2)+'" y="'+(H-B+28)+'" text-anchor="middle" font-size="10" fill="var(--muted)">'+dd.toLocaleDateString("en-GB",{month:"short"})+'</text>';
-    if (r.total) s += '<text x="'+(x+w/2)+'" y="'+(y(r.total)-4)+'" text-anchor="middle" font-size="9.5" fill="var(--muted)" font-family="JetBrains Mono, monospace">'+fmt(r.total)+'</text>';
+    if (r.total) s += '<text x="'+(x+w/2)+'" y="'+(y(r.total)-4)+'" text-anchor="middle" font-size="9.5" fill="var(--muted)" font-family="JetBrains Mono, monospace" paint-order="stroke" stroke="var(--surface)" stroke-width="3" stroke-linejoin="round">'+fmt(r.total)+'</text>';
   });
   if (dailyCap) s += '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(dailyCap)+'" y2="'+y(dailyCap)+'" stroke="var(--fg)" stroke-width="1.5" stroke-dasharray="5 4"/>';
   $("chart").innerHTML = s + '</svg>';
@@ -464,7 +465,7 @@ function renderPlan(){
   $("planIncome").textContent = "PKR " + fmt(inc) + " per 4 weeks";
   const total = Math.max(inc, used), op = i => i < billRows.length ? (1 - i*0.25) : 1;
   $("planStack").innerHTML = rows.map((r,i) => '<i style="width:'+(r.v/total*100)+'%;background:'+r.color+';opacity:'+op(i)+'"></i>').join("");
-  $("planList").innerHTML = rows.map((r,i) => '<li><i style="background:'+r.color+';opacity:'+op(i)+'"></i><span>'+esc(r.label)+' <span class="muted sm">'+esc(r.note)+'</span></span><span class="num">'+fmt(r.v)+'</span><span class="pct num">'+(inc? Math.round(r.v/inc*100):0)+'%</span></li>').join("");
+  $("planList").innerHTML = rows.map((r,i) => '<li><i style="background:'+r.color+';opacity:'+op(i)+'"></i><span>'+esc(r.label)+' <span class="muted sm nb">'+esc(r.note)+'</span></span><span class="num">'+fmt(r.v)+'</span><span class="pct num">'+(inc? Math.round(r.v/inc*100):0)+'%</span></li>').join("");
   const billShare = inc ? Math.round(billRows.reduce((s,r)=>s+r.v,0)/inc*100) : 0;
   $("planNote").textContent = "Bills take " + billShare + "% of each pay. Bills are monthly and pay is every 4 weeks, so about once a year a cycle has no bill in it: send that whole amount to savings.";
 }
@@ -475,7 +476,7 @@ function renderWajDues(){
     const st = itemStatus(i), ty = TYPES[i.type] || TYPES.other;
     const pays = (i.payments||[]).map(p => fmtC(p.amount,p.currency)+" on "+nice(p.date)).join(", ");
     return '<li><div style="display:grid;gap:2px"><span class="pill due">'+esc(ty[0])+'</span><span style="font-weight:700">'+esc(i.title)+'</span>' +
-      '<span class="sub">'+(i.amount != null ? fmtC(i.amount, i.currency) + " in all" : "Amount not set") + (pays ? ". Paid: " + esc(pays) : "") + '</span></div>' +
+      tags([i.amount != null ? fmtC(i.amount, i.currency) + " in all" : ["Amount not set", "warn"], ...(i.payments||[]).map(p => ["Paid " + fmtC(p.amount,p.currency) + " on " + nice(p.date), "good"])]) + '</div>' +
       '<div class="mid" style="font-size:1.05rem;text-align:right">'+(st.left != null ? fmtC(st.left, i.currency) : "-")+'</div>' +
       (st.left ? '<form class="inline-form" data-payitem="'+esc(i.id)+'"><input type="number" step="any" min="0" value="'+Math.round(st.left)+'" aria-label="Amount paid" required><select aria-label="Currency">'+curOptions(i.currency||"PKR")+'</select><button class="btn small ghost" type="submit">Paid, log it</button></form>' : '') + '</li>';
   }).join("") : '<li class="empty">No kaffara, fidya, nazr or mazalim open.</li>';
@@ -488,8 +489,8 @@ function renderDebts(){
     const pays = (d.payments||[]).map(p => fmtC(p.amount,p.currency)+" on "+nice(p.date)).join(", ");
     return '<li><div style="display:grid;gap:2px"><span class="dir '+(inbound?'in':'out')+'">'+(inbound?'Owes you':'You owe')+'</span>' +
       '<span style="font-weight:700">'+esc(d.person)+(d.person_ur ? ' <span class="ur muted" lang="ur">'+esc(d.person_ur)+'</span>' : '')+'</span>' +
-      '<span class="sub">'+fmtC(d.amount,d.currency)+(pays ? '. Repaid: '+esc(pays) : '')+(d.note ? '. '+esc(d.note) : '')+'</span>' +
-      (d.khumsPaid ? '<span class="pill good">Khums already paid</span>' : '') + '</div>' +
+      tags([fmtC(d.amount,d.currency), ...(d.payments||[]).map(p => ['Repaid '+fmtC(p.amount,p.currency)+' on '+nice(p.date), 'good']), d.khumsPaid ? ['Khums already paid', 'kh'] : '']) +
+      (d.note ? '<span class="sub">'+esc(d.note)+'</span>' : '') + '</div>' +
       '<div style="text-align:right"><div class="mid" style="font-size:1.05rem">'+(st.open ? 'PKR '+fmt(st.left) : 'Settled')+'</div>' +
       (st.open && d.currency !== "PKR" ? '<div class="sub num">≈ '+fmtC(st.leftNative, d.currency)+' left</div>' : '') + '</div>' +
       (st.open ? '<form class="inline-form" data-debt="'+esc(d.id)+'"><input type="number" step="any" min="0" placeholder="Repayment" aria-label="Repayment amount" required><select aria-label="Repayment currency">'+curOptions(d.currency)+'</select><button class="btn small ghost" type="submit">Record</button><button class="btn small ghost" type="button" data-settle="'+esc(d.id)+'">Mark settled</button></form>' : '') + '</li>';
@@ -500,8 +501,8 @@ function renderDebts(){
 function renderBills(){
   const row = b => {
     const due = billDue(b), mentor = b.paidBy === "mentor", paid = !mentor && b.lastPaid && b.lastPaid >= C().cycle.start;
-    const sub = fmtC(b.amount,b.currency) + " a month" + (mentor ? "" : " ≈ PKR " + fmt(toPkr(b.amount,b.currency))) + " · due " + nice(due) +
-      (mentor ? (b.remindedAt ? " · reminded " + nice(b.remindedAt) : "") : (b.lastPaid ? " · last paid " + nice(b.lastPaid) : ""));
+    const sub = tags([fmtC(b.amount,b.currency) + " / month", mentor ? "" : "≈ PKR " + fmt(toPkr(b.amount,b.currency)), ["Due " + nice(due), "date"],
+      mentor ? (b.remindedAt ? ["Reminded " + nice(b.remindedAt), "good"] : "") : (b.lastPaid ? "Last paid " + nice(b.lastPaid) : "")]);
     const act = mentor ? '<button class="btn small ghost" data-remind-bill="'+esc(b.id)+'">Reminded</button>' :
       paid ? '<span class="pill good">Paid this cycle</span>' : '<button class="btn small ghost" data-pay-bill="'+esc(b.id)+'">Paid</button>';
     return '<li><div><div style="font-weight:700">'+esc(b.name)+(mentor ? ' <span class="pill due">Paid by mentor</span>' : '')+'</div><div class="sub">'+sub+'</div></div>' + act + '</li>';
@@ -512,7 +513,7 @@ function renderBills(){
 }
 function renderBalances(k){
   const cfg = C(), saved = savings();
-  const fx = (cfg.foreignCash||[]).map(f => '<li><div><div style="font-weight:700">'+esc(f.currency)+' cash</div><div class="sub">≈ PKR '+fmt(toPkr(f.amount,f.currency))+(f.note?' · '+esc(f.note):'')+'</div></div><span class="mid" style="font-size:1.05rem">'+fmtC(f.amount,f.currency)+'</span></li>').join("");
+  const fx = (cfg.foreignCash||[]).map(f => '<li><div><div style="font-weight:700">'+esc(f.currency)+' cash</div>'+tags(['≈ PKR '+fmt(toPkr(f.amount,f.currency)), f.note ? [esc(f.note),'warn'] : ''])+'</div><span class="mid" style="font-size:1.05rem">'+fmtC(f.amount,f.currency)+'</span></li>').join("");
   const months = cfg.payAmount ? saved / (cfg.payAmount - (cfg.savePerCycle||0)) : 0;
   $("balances").innerHTML =
     '<li><div><div style="font-weight:700">Savings</div><div class="sub">Covers about '+(Math.round(months*10)/10)+' of a cycle. Aim for 3 cycles.</div></div><span class="mid" style="font-size:1.05rem">PKR '+fmt(saved)+'</span></li>' +
@@ -550,7 +551,7 @@ function renderKhums(){
   const ks = khumsStatus(m);
   const st = $("khStatus"); st.className = "chip-status " + ks.cls; st.textContent = ks.word === "Nothing owed" ? "Nothing owed today" : ks.short;
   $("khLast").textContent = lastYearNote(m); $("khLast").hidden = !m.years.length;
-  $("khPayable").textContent = "Payable on 23 Ramadan " + (kh.label || "") + (m.daysTo != null && m.daysTo >= 0 ? " · in " + m.daysTo + " days" : "");
+  $("khPayable").textContent = "Payable on 23 Ramadan " + (kh.label || "") + (m.daysTo != null && m.daysTo >= 0 ? ", in " + m.daysTo + " days" : "");
   $("khEst").innerHTML = "<small>about PKR</small>" + fmt(m.est);
   $("khEstSub").textContent = !m.hasCarry ? "Running estimate before subtracting mukhamas, so likely too high" : m.taxable > 0 ? "Running estimate: one fifth of PKR " + fmt(m.taxable) + " you hold above the mukhamas. It moves with your savings until the day." : "Holdings are below the mukhamas, so none would be due at this rate";
   $("khDate").textContent = kh.next ? "About " + longDate(kh.next) + ", depends on moon sighting" : "Set the date in Settings";
@@ -584,11 +585,11 @@ function renderWajibat(){
   const q = D.wajibat.qaza, c = q.counts || {}, kh = khums(), pend = pendingItems();
   const relOpen = pend.filter(i => RELIGIOUS.includes(i.type)).length + kh.unpaid.length;
   const ks = khumsStatus(kh);
-  $("wajTiles").innerHTML = tile("Qaza prayers", nfEn.format(qazaTotal()), "done by " + nice(qazaFinish(1).date) + " at one a prayer", "due") +
-    tile("Qaza fasts", nfEn.format(+q.roza||0), (+q.roza ? "still owed" : "none owed")) +
-    tile("Owed now", relOpen ? nfEn.format(relOpen) : "None", relOpen ? pend.filter(i => RELIGIOUS.includes(i.type)).map(i => (TYPES[i.type]||TYPES.other)[0]).concat(kh.unpaid.map(y => "khums " + y.year)).join(", ") : "nothing pending", relOpen ? "warn" : "ok") +
-    tile("Khums", ks.word, ks.short, ks.cls, "#khums") +
-    tile("Debts", openDebts().filter(d => d.direction !== "owed_to_me").length + " / " + openDebts().filter(d => d.direction === "owed_to_me").length, "I owe / owed to me", "", "#money");
+  $("wajTiles").innerHTML = tile("Qaza prayers", nfEn.format(qazaTotal()), [["Done " + nice(qazaFinish(1).date), "date"], "1 a prayer"], "due") +
+    tile("Qaza fasts", nfEn.format(+q.roza||0), [+q.roza ? ["Still owed","warn"] : ["None owed","good"]]) +
+    tile("Owed now", relOpen ? nfEn.format(relOpen) : "None", relOpen ? pend.filter(i => RELIGIOUS.includes(i.type)).map(i => (TYPES[i.type]||TYPES.other)[0]).concat(kh.unpaid.map(y => "Khums " + y.year)).map(x => [x,"warn"]) : [["Nothing pending","good"]], relOpen ? "warn" : "ok") +
+    tile("Khums", ks.word, ks.tags || ks.short, ks.cls, "#khums") +
+    tile("Debts", openDebts().filter(d => d.direction !== "owed_to_me").length + " / " + openDebts().filter(d => d.direction === "owed_to_me").length, [["I owe","warn"], ["Owed to me","good"]], "", "#money");
   $("prayers").innerHTML = PRAYERS.map(([k,en,ur]) => { const n = +c[k]||0; return `<div class="prayer"><div class="name">${esc(en)}<span class="ur" lang="ur">${esc(ur)}</span></div>
     <div class="count${n?"":" zero"}">${nfEn.format(n)}</div><div class="acts"><button class="btn ghost" type="button" data-k="${k}" data-d="-1" ${n?"":"disabled"}>✓ Offered</button><button class="btn ghost" type="button" data-k="${k}" data-d="1">+ Missed</button></div></div>`; }).join("");
   $("rozaCount").textContent = nfEn.format(+q.roza||0);

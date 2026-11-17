@@ -88,10 +88,10 @@ h2.bi .ur{font-size:15px}
 .tile-grid.five{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
 .tile{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:4px;text-decoration:none;color:inherit}
 a.tile:hover{border-color:var(--accent)}
-.tile span:first-child{font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.tile > span:first-child{font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
 .tile b{font-size:28px;font-weight:700;line-height:1.15}
 .tile b.word{font-size:21px}
-.tile span:last-child{font-size:.84rem;color:var(--muted)}
+.tile > span:last-child{font-size:.84rem;color:var(--muted)}
 .tile.ok b{color:var(--accent)} .tile.warn b{color:var(--warn)} .tile.due b{color:var(--qaza)}
 
 /* hero ring */

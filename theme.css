@@ -55,7 +55,7 @@ h2{font-size:18px;font-weight:600;letter-spacing:-.01em}
 .hero-dark .chip-status.ok{background:rgba(255,255,255,.12);color:#fafafa}
 .track{background:#3f3f46}.track > i{background:#fafafa}.track > b{background:#a1a1aa}
 .tile{border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
-.tile span:first-child{text-transform:none;letter-spacing:0;font-size:.86rem;font-weight:500}
+.tile > span:first-child{text-transform:none;letter-spacing:0;font-size:.86rem;font-weight:500}
 .tile.due b{color:var(--fg)} .tile.ok b{color:var(--good)} .tile.warn b{color:var(--fg)}
 .chip-status,.pill{border-radius:999px;font-weight:600}
 .banner{border-radius:12px}
@@ -122,18 +122,18 @@ h1{font-size:44px;font-weight:700;letter-spacing:-.035em;line-height:1.05}
 h2{font-size:20px;font-weight:700;letter-spacing:-.02em}
 .page-head .eyebrow,.eyebrow{font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;font-size:11.5px;font-weight:500;color:var(--muted)}
 .brand b{font-family:var(--head);font-size:19px;letter-spacing:-.02em}
-.tile span:first-child{font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;font-size:11px;display:flex;align-items:center;gap:8px}
-.tile span:first-child::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
-.tile span:last-child{font-size:13px}
+.tile > span:first-child{font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;font-size:11px;display:flex;align-items:center;gap:8px}
+.tile > span:first-child::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.tile > span:last-child{font-size:13px}
 .big{font-size:64px;letter-spacing:-.05em}
 
 /* tiles take their meaning's colour */
 .tile-grid .tile{border-width:1px}
-.tile.due{background:var(--violet-soft);border-color:var(--violet-line)} .tile.due span:first-child,.tile.due b{color:var(--violet)}
-.tile.ok{background:var(--emerald-soft);border-color:var(--emerald-line)} .tile.ok span:first-child,.tile.ok b{color:var(--emerald)}
-.tile.warn{background:var(--amber-soft);border-color:var(--amber-line)} .tile.warn span:first-child,.tile.warn b{color:var(--amber)}
+.tile.due{background:var(--violet-soft);border-color:var(--violet-line)} .tile.due > span:first-child,.tile.due b{color:var(--violet)}
+.tile.ok{background:var(--emerald-soft);border-color:var(--emerald-line)} .tile.ok > span:first-child,.tile.ok b{color:var(--emerald)}
+.tile.warn{background:var(--amber-soft);border-color:var(--amber-line)} .tile.warn > span:first-child,.tile.warn b{color:var(--amber)}
 .tile-grid .tile:nth-child(4):not(.ok):not(.warn):not(.due){background:var(--blue-soft);border-color:var(--blue-line)}
-.tile-grid .tile:nth-child(4):not(.ok):not(.warn):not(.due) span:first-child{color:var(--blue)}
+.tile-grid .tile:nth-child(4):not(.ok):not(.warn):not(.due) > span:first-child{color:var(--blue)}
 
 /* hero: ink card, green ring and a blue accent line */
 .hero-dark{background:#09090b;position:relative;overflow:hidden}
@@ -326,3 +326,53 @@ h2{font-size:20px;font-weight:700;letter-spacing:-.02em}
 :root[data-theme="dark"] .ptile.done{background:linear-gradient(150deg,color-mix(in srgb,var(--pc) 75%,#000),color-mix(in srgb,var(--pc) 45%,#000))}
 /* selected day: gradient starts at the outer edge (no seam under the border), no clipped shadow */
 .mp-day.sel{background-origin:border-box;border-color:transparent;box-shadow:none}
+
+/* ---------- tags: short facts as chips ---------- */
+.tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+.tags .tag{display:inline-flex;align-items:center;gap:4px;font-family:var(--body,inherit);font-size:12px;font-weight:600;line-height:1.35;letter-spacing:0;text-transform:none;
+  padding:3px 9px;border-radius:999px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+  background:color-mix(in srgb,var(--fg) 5%,var(--surface));color:color-mix(in srgb,var(--fg) 78%,var(--surface));border:1px solid color-mix(in srgb,var(--fg) 9%,transparent)}
+.tags .tag b{font-weight:800;color:var(--fg)}
+.tags .tag.date{background:var(--blue-soft);color:var(--blue);border-color:var(--blue-line)}
+.tags .tag.money{color:var(--fg);font-weight:700}
+.tags .tag.good,.tags .tag.kh{background:var(--emerald-soft);color:var(--emerald);border-color:var(--emerald-line)}
+.tags .tag.warn{background:var(--amber-soft);color:var(--amber);border-color:var(--amber-line)}
+.tags .tag.due{background:var(--violet-soft);color:var(--violet);border-color:var(--violet-line)}
+.tags .tag.bad{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 30%,transparent)}
+.tags .tag:is(.good,.kh,.warn,.due,.bad) b{color:inherit}
+.tile .tags{margin-top:4px}
+.timeline .body .tags{margin-top:5px}
+.mp-what .tags{margin-top:4px}
+.items .tags{margin:3px 0 2px}
+.meal .tags{margin-top:2px}
+#todayCycle .tags{justify-content:flex-end}
+/* on dark cards */
+.hero-dark .tags .tag{background:rgba(255,255,255,.08);color:#e4e4e7;border-color:rgba(255,255,255,.12)}
+.hero-dark .tags .tag.date{background:rgba(92,203,230,.14);color:#8fdcef;border-color:rgba(92,203,230,.3)}
+.hero-dark .tags .tag:is(.good,.kh){background:rgba(180,214,92,.14);color:#c9e48a;border-color:rgba(180,214,92,.3)}
+.hero-copy .tags{margin:2px 0 4px}
+
+/* ---------- visual fixes ---------- */
+/* dark cards: no pale outline at the corners */
+.hero-dark{box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);border:0;isolation:isolate}
+.hero-dark::after{border-radius:0 0 var(--r) var(--r)}
+/* pace bar: visible fill on the dark card */
+.hero-dark .track{background:rgba(255,255,255,.14)}
+.hero-dark .track > b{background:#fff;width:2px;border-radius:1px}
+/* meal cards line up from the top */
+.meals{align-items:stretch}
+.meal{align-content:start}
+/* khums timeline: line runs through the middle of every dot */
+.kh-line{align-items:flex-start}
+.kh-line .node span{box-sizing:border-box;margin:2px 0}
+.kh-line .node.now span{margin:0}
+.kh-line .seg{margin:8px 6px 0;height:2px}
+/* khums table: amounts never split over two lines */
+td.r,th.r{white-space:nowrap}
+/* pay plan legend: currency stays with its amount */
+.plan-list li{align-items:start}.plan-list li i{margin-top:4px}
+.plan-list .nb{display:block;white-space:normal;line-height:1.35;margin-top:1px}
+#planList li > span:nth-child(2){min-width:0}
+@media (max-width:520px){.tile-grid .tile b{font-size:clamp(20px,6.4vw,26px)}.tile-grid .tile b.word{font-size:19px}.tile-grid .tile{padding:14px}}
+/* Urdu title beside an English one: gap and divider on the physical left (the Urdu span itself runs right to left) */
+.item .t .ur{display:inline-block;margin:0 0 0 12px;padding:0 0 0 12px;border:0;border-left:1px solid var(--line)}
