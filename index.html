@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Daily Affairs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Noto+Nastaliq+Urdu:wght@400;600&family=Amiri:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,650&display=swap">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="bar">
+  <div class="bar-in">
+    <div class="brand"><b>Daily Affairs</b><span class="ur" lang="ur">روزمرہ امور</span></div>
+    <div class="sync" id="sync" role="status">Not connected</div>
+  </div>
+  <nav class="tabs" id="tabs" aria-label="Sections">
+    <a href="#today">Today</a><a href="#money">Money</a><a href="#khums">Khums</a><a href="#wajibat">Wajibat</a><a href="#wasiyat">Wasiyat</a><a href="#settings">Settings</a>
+  </nav>
+</header>
+
+<main class="wrap">
+
+<!-- ================= TODAY ================= -->
+<section class="view" id="v-today" hidden>
+  <div class="tiles" id="todayTiles"></div>
+  <div class="grid">
+    <section class="card span-6" aria-labelledby="addH">
+      <div class="card-head"><h2 id="addH">Log spending</h2><span class="muted sm">Cash, Foodpanda, card, anything</span></div>
+      <form id="addForm" autocomplete="off">
+        <div class="chips" id="mealChips" role="group" aria-label="What was it">
+          <button type="button" class="chip" data-meal="nashta" aria-pressed="false"><span class="dot" style="background:var(--nashta)"></span>Nashta</button>
+          <button type="button" class="chip" data-meal="dinner" aria-pressed="false"><span class="dot" style="background:var(--dinner)"></span>Dinner</button>
+          <button type="button" class="chip" data-meal="snack" aria-pressed="false"><span class="dot" style="background:var(--snack)"></span>Snack</button>
+          <button type="button" class="chip" data-meal="" aria-pressed="true">Not food</button>
+        </div>
+        <div class="row">
+          <label>Amount<input id="fAmount" class="amount-in" type="number" inputmode="decimal" min="0" step="any" placeholder="0" required></label>
+          <label>Currency<select id="fCur"></select></label>
+          <label>Delivery<select id="fDel">
+            <option value="0" data-v="">None or already in amount</option>
+            <option value="50" data-v="Rox Burger">Rox Burger +50</option>
+            <option value="100" data-v="Haji Fresh Juice">Haji Fresh Juice +100</option>
+            <option value="100" data-v="Angaara">Angaara +100</option>
+            <option value="140" data-v="Hadia's Kitchen">Hadia's Kitchen (inDrive) +140</option>
+          </select></label>
+        </div>
+        <div class="row">
+          <label>Category<select id="fCat"></select></label>
+          <label>Paid by<select id="fSrc">
+            <option>Cash</option><option>Foodpanda</option><option>Direct order</option><option>Card</option><option>JazzCash</option><option>Easypaisa</option><option>Bank transfer</option>
+          </select></label>
+          <label>Date<input id="fDate" type="date" required></label>
+        </div>
+        <label>Note<input id="fNote" type="text" maxlength="140" placeholder="e.g. paratha + chai, Savour Foods"></label>
+        <div class="hint" id="capHint" aria-live="polite"></div>
+        <div class="toolbar"><button class="btn" id="addBtn" type="submit">Add entry</button><span class="toast-inline" id="addToast" aria-live="polite"></span></div>
+      </form>
+    </section>
+    <section class="card span-6" aria-labelledby="tqH">
+      <div class="card-head"><h2 id="tqH">Qaza today</h2><span class="ur muted" lang="ur">قضا نمازیں</span></div>
+      <div class="toolbar"><button class="btn" type="button" data-fullday>Offered one full day (5 prayers)</button></div>
+      <div class="qmini" id="qazaMini"></div>
+      <div class="card-head" style="margin-top:6px"><h2>Coming up</h2></div>
+      <ul class="items" id="upcoming"></ul>
+    </section>
+  </div>
+</section>
+
+<!-- ================= MONEY ================= -->
+<section class="view" id="v-money" hidden>
+  <section class="card hero" aria-label="Cycle summary">
+    <div><span class="eyebrow" id="cycleLabel">Current pay cycle</span><span class="big" id="left"><small>PKR</small>-</span><span class="muted" id="leftSub"></span></div>
+    <div><span class="eyebrow">Safe per day</span><span class="mid" id="perDay"><small>PKR</small>-</span><span class="muted" id="perDaySub"></span></div>
+    <div><span class="eyebrow">Spent today</span><span class="mid" id="today"><small>PKR</small>-</span><span id="todayPill"></span></div>
+    <div><span class="eyebrow">Next pay</span><span class="mid" id="payIn">-</span><span class="muted" id="payDate"></span></div>
+    <div class="pace">
+      <div class="track" aria-hidden="true"><i id="spentBar" style="width:0%"></i><b id="timeMark" style="left:0%"></b></div>
+      <span class="muted sm" id="paceText"></span>
+    </div>
+  </section>
+  <div class="grid">
+    <section class="card span-7" aria-labelledby="foodH">
+      <div class="card-head"><h2 id="foodH">Food per order</h2><span class="muted sm" id="foodTotal"></span></div>
+      <div class="meals" id="meals"></div>
+      <div class="chart" id="chart"></div>
+      <div class="legend">
+        <span><i style="background:var(--nashta)"></i>Nashta</span><span><i style="background:var(--dinner)"></i>Dinner</span>
+        <span><i style="background:var(--snack)"></i>Snack</span><span><i style="background:var(--food-other)"></i>Other food</span>
+        <span><i style="background:var(--fg);height:2px"></i>Daily food budget</span>
+      </div>
+    </section>
+    <section class="card span-5" aria-labelledby="planH">
+      <div class="card-head"><h2 id="planH">Where each pay goes</h2><span class="muted num sm" id="planIncome"></span></div>
+      <div class="stack" id="planStack" aria-hidden="true"></div>
+      <ul class="plan-list" id="planList"></ul>
+      <p class="muted sm" id="planNote"></p>
+    </section>
+    <section class="card span-6" aria-labelledby="wdH">
+      <div class="card-head"><h2 id="wdH">Wajibat to pay</h2><span class="muted sm">Shared with the Wajibat and Wasiyat tabs</span></div>
+      <ul class="items" id="wajDues"></ul>
+    </section>
+    <section class="card span-6" aria-labelledby="debtH">
+      <div class="card-head"><h2 id="debtH">Loans and debts</h2><span class="muted sm">Shared with the wasiyat</span></div>
+      <ul class="items" id="debts"></ul>
+      <details><summary>Add a loan or debt</summary><form id="debtForm" class="panel"></form></details>
+    </section>
+    <section class="card span-6" aria-labelledby="billH">
+      <div class="card-head"><h2 id="billH">Monthly bills</h2><span class="muted sm">Tap Paid when the card is charged</span></div>
+      <ul class="items" id="bills"></ul>
+    </section>
+    <section class="card span-6" aria-labelledby="balH">
+      <div class="card-head"><h2 id="balH">What you hold</h2></div>
+      <ul class="items" id="balances"></ul>
+    </section>
+    <section class="card span-12" aria-labelledby="txH">
+      <div class="card-head"><h2 id="txH">Entries this cycle</h2><span class="muted sm" id="txCount"></span></div>
+      <div class="table-wrap" id="txWrap"></div>
+    </section>
+  </div>
+</section>
+
+<!-- ================= KHUMS ================= -->
+<section class="view" id="v-khums" hidden>
+  <section class="card">
+    <div class="card-head"><h2>Khums</h2><span class="muted sm">Sayyid al-Sistani · year ends 23 Ramadan · feeds the wasiyat automatically</span></div>
+    <div class="hero boxed">
+      <div><span class="eyebrow">Estimated khums for <span id="khLabel">-</span><span id="khGreg"></span></span><span class="big" id="khEst"><small>PKR</small>-</span><span class="muted" id="khEstSub"></span></div>
+      <div><span class="eyebrow">Held now</span><span class="mid" id="khHeld"><small>PKR</small>-</span><span class="muted sm">savings, cash, foreign cash, loans owed to you (except ones khums is already paid on), less what you owe</span></div>
+      <div><span class="eyebrow">Mukhamas carried in</span><span class="mid" id="khCarry">-</span><span class="muted sm" id="khCarrySub"></span></div>
+      <div><span class="eyebrow">Khums date</span><span class="mid" id="khIn">-</span><span class="muted" id="khDate"></span></div>
+    </div>
+    <div class="banner" id="khUnpaid" hidden></div>
+    <p class="muted sm">This estimate leaves out unused items and kitchen stock. Add those on the day, as in past years.</p>
+    <div class="table-wrap" id="khTable"></div>
+    <details>
+      <summary>Record a khums payment</summary>
+      <form id="khPayForm" class="panel">
+        <label>Khums year<select id="kYear"></select></label>
+        <label>Share<select id="kShare"><option>Sahm-e-Imam</option><option>Sahm-e-Sadat</option><option>Both halves</option></select></label>
+        <label>Amount<input id="kAmt" type="number" step="any" min="0" class="num" required></label>
+        <label>Currency<select id="kCur"></select></label>
+        <label>Date<input id="kDate" type="date" required></label>
+        <label class="full">Paid to<input id="kTo" type="text" maxlength="120" placeholder="Office or representative, or recipient"></label>
+        <div class="full"><button class="btn" type="submit">Save payment</button></div>
+      </form>
+    </details>
+    <details>
+      <summary>Close the year on 23 Ramadan</summary>
+      <form id="khCloseForm" class="panel">
+        <p class="full muted sm">Enter the figures as worked out on the day. This adds the year to the table, sets its mukhamas as the carry for the next year, and the wasiyat picks up anything left unpaid.</p>
+        <label>Year<input id="kcYear" type="text" maxlength="20"></label>
+        <label>Date<input id="kcDate" type="date"></label>
+        <label>Savings counted<input id="kcSav" type="number" step="any" min="0" class="num"></label>
+        <label>Khums due<input id="kcDue" type="number" step="any" min="0" class="num"></label>
+        <label>Mukhamas out<input id="kcOut" type="number" step="any" min="0" class="num"></label>
+        <label>Currency<select id="kcCur"></select></label>
+        <label>Next khums date<input id="kcNext" type="date"></label>
+        <label>Next year label<input id="kcNextLabel" type="text" maxlength="20"></label>
+        <div class="full"><button class="btn" type="submit">Close the year</button></div>
+      </form>
+    </details>
+  </section>
+</section>
+
+<!-- ================= WAJIBAT ================= -->
+<section class="view" id="v-wajibat" hidden>
+  <div class="tiles" id="wajTiles"></div>
+  <section class="card">
+    <div class="card-head"><h2>Qaza namaz</h2><span class="ur muted" lang="ur">قضا نمازیں</span></div>
+    <div class="toolbar"><button class="btn" type="button" data-fullday>Offered one full day (5 prayers)</button><span class="muted sm">Tap Offered after each qaza you pray. Missed adds one.</span></div>
+    <div class="prayers" id="prayers"></div>
+    <div class="toolbar"><span class="eyebrow">Roza qaza</span>
+      <button class="btn ghost small" type="button" id="rozaMinus">- Kept one</button>
+      <b class="num" id="rozaCount">-</b>
+      <button class="btn ghost small" type="button" id="rozaPlus">+ Missed one</button>
+    </div>
+    <div><div class="eyebrow">Recent changes</div><ul class="log" id="log"></ul></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Dues and trusts</h2><span class="ur muted" lang="ur">مالی واجبات اور امانتیں</span></div>
+    <div class="banner" id="unclearBanner" hidden></div>
+    <p class="muted sm">Khums comes live from the Khums tab and debts from Money, so they are not repeated here.</p>
+    <div class="toolbar"><button class="btn" type="button" id="addItem">Add an obligation</button></div>
+    <div id="formSlot"></div>
+    <div class="items cards" id="itemsList"></div>
+    <details><summary id="clearedSummary">Cleared items</summary><div class="items cards" id="clearedItems"></div></details>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Wasiyat details</h2><span class="ur muted" lang="ur">وصیت کی تفصیلات</span></div>
+    <form class="panel" id="profileForm" autocomplete="off">
+      <label>Your full name (English)<input name="name_en"></label>
+      <label>Your full name (Urdu)<input name="name_ur" class="ur" dir="rtl" lang="ur"></label>
+      <label>Father's name (English)<input name="father_en"></label>
+      <label>Father's name (Urdu)<input name="father_ur" class="ur" dir="rtl" lang="ur"></label>
+      <label>Executor (wasi), English<input name="wasi_en"></label>
+      <label>Executor (wasi), Urdu<input name="wasi_ur" class="ur" dir="rtl" lang="ur"></label>
+      <label>Executor's contact<input name="wasi_contact" dir="ltr"></label>
+      <label>Backup executor, English<input name="wasi2_en"></label>
+      <label>Backup executor, Urdu<input name="wasi2_ur" class="ur" dir="rtl" lang="ur"></label>
+      <label>Supervisor (nazir), English (optional)<input name="nazir_en"></label>
+      <label>Supervisor (nazir), Urdu<input name="nazir_ur" class="ur" dir="rtl" lang="ur"></label>
+      <label>Guardian of minor children, English (optional)<input name="qayyim_en"></label>
+      <label>Guardian of minor children, Urdu<input name="qayyim_ur" class="ur" dir="rtl" lang="ur"></label>
+      <label>City<input name="city"></label>
+      <label class="full">Property held by others or unknown to heirs, English<textarea name="hidden_en"></textarea></label>
+      <label class="full">Same in Urdu<textarea name="hidden_ur" class="ur" dir="rtl" lang="ur"></textarea></label>
+      <label class="full">Additional instructions, English<textarea name="extra_en"></textarea></label>
+      <label class="full">Additional instructions, Urdu<textarea name="extra_ur" class="ur" dir="rtl" lang="ur"></textarea></label>
+      <div class="full toolbar"><button class="btn" type="submit">Save details</button></div>
+    </form>
+  </section>
+</section>
+
+<!-- ================= WASIYAT ================= -->
+<section class="view" id="v-wasiyat" hidden>
+  <section class="card">
+    <div class="card-head"><h2>Wasiyat nama</h2><span class="ur muted" lang="ur">وصیت نامہ</span></div>
+    <div class="toolbar">
+      <button class="btn ghost" type="button" id="copyUr">Copy Urdu text</button>
+      <button class="btn ghost" type="button" id="copyEn">Copy English text</button>
+      <button class="btn ghost" type="button" id="dlWasiyat">Download (.html)</button>
+      <button class="btn ghost" type="button" id="printW">Print</button>
+    </div>
+    <p class="muted sm">Rebuilt live from your qaza counts, dues, debts and the khums ledger. Print and sign a copy periodically, with two witnesses.</p>
+    <div class="wasiyat">
+      <article class="leaf ur-leaf" id="leafUr" lang="ur" dir="rtl"></article>
+      <article class="leaf en-leaf" id="leafEn" lang="en"></article>
+    </div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Rulings this follows</h2><span class="ur muted" lang="ur">مسائل (آیت اللہ العظمیٰ سیستانی)</span></div>
+    <div class="rules" id="rules"></div>
+  </section>
+</section>
+
+<!-- ================= SETTINGS ================= -->
+<section class="view" id="v-settings" hidden>
+  <section class="card">
+    <div class="card-head"><h2>Connection</h2><span class="muted sm">Your data lives in a private GitHub repo, not on this page</span></div>
+    <form id="connForm" class="panel">
+      <label>Owner<input id="cOwner" autocomplete="off"></label>
+      <label>Private data repo<input id="cRepo" autocomplete="off"></label>
+      <label>File path<input id="cPath" autocomplete="off"></label>
+      <label>Branch (blank = default)<input id="cBranch" autocomplete="off"></label>
+      <label class="full">GitHub token<input id="cToken" type="password" autocomplete="off" placeholder="github_pat_..."></label>
+      <p class="full muted sm">Make a fine-grained token at GitHub, Settings, Developer settings, Fine-grained tokens: only the data repo, permission Contents: Read and write. It is kept in this browser only. Use Forget on shared devices.</p>
+      <div class="full toolbar"><button class="btn" type="submit">Connect</button><button class="btn ghost" type="button" id="forget">Forget token on this device</button><span class="muted sm" id="connMsg"></span></div>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Money settings</h2>
+    <details id="payDetails"><summary>I got paid: start a new cycle</summary>
+      <form id="payForm" class="panel">
+        <label>Amount received (PKR)<input id="pAmount" type="number" min="0" step="any" class="num"></label>
+        <label>Received on<input id="pDate" type="date"></label>
+        <p class="full muted sm" id="payPreview"></p>
+        <div class="full"><button class="btn" type="submit">Start new cycle</button></div>
+      </form>
+    </details>
+    <details id="rateDetails"><summary>Exchange rates (PKR per 1 unit)</summary>
+      <form id="rateForm" class="panel"><div class="full row" id="rateRow"></div>
+        <p class="full muted sm">Entries keep the PKR value at the rate in force when logged.</p>
+        <div class="full"><button class="btn" type="submit">Save rates</button></div></form>
+    </details>
+    <details id="capDetails"><summary>Budget caps and cycle</summary>
+      <form id="capForm" class="panel">
+        <label>Nashta cap per order<input id="cNashta" type="number" min="0" class="num"></label>
+        <label>Dinner cap per order<input id="cDinner" type="number" min="0" class="num"></label>
+        <label>Snack cap per order<input id="cSnack" type="number" min="0" class="num"></label>
+        <label>Nashta orders per cycle<input id="cNashtaN" type="number" min="0" class="num"></label>
+        <label>Dinner orders per cycle<input id="cDinnerN" type="number" min="0" class="num"></label>
+        <label>Snacks per cycle<input id="cSnackN" type="number" min="0" class="num"></label>
+        <label>Other food per cycle (PKR)<input id="cOtherFood" type="number" min="0" class="num"></label>
+        <label>Pay per 4 weeks (PKR)<input id="cPay" type="number" min="0" class="num"></label>
+        <label>Save per cycle (PKR)<input id="cSave" type="number" min="0" class="num"></label>
+        <label>Set aside for wajibat per cycle (PKR)<input id="cWaj" type="number" min="0" class="num"></label>
+        <label>Cycle opening balance (PKR)<input id="cOpen" type="number" min="0" class="num"></label>
+        <label>Cycle started<input id="cStart" type="date"></label>
+        <label>Next pay date<input id="cNext" type="date"></label>
+        <div class="full"><button class="btn" type="submit">Save settings</button></div>
+      </form>
+    </details>
+    <details id="khSetDetails"><summary>Khums settings</summary>
+      <form id="khSetForm" class="panel">
+        <label>Current khums year<input id="kLabel" type="text" maxlength="20"></label>
+        <label>Gregorian span<input id="kGreg" type="text" maxlength="40"></label>
+        <label>Khums date (23 Ramadan)<input id="kNext" type="date"></label>
+        <label>Mukhamas carried in (PKR)<input id="kCarry" type="number" step="any" min="0" class="num"></label>
+        <div class="full"><button class="btn" type="submit">Save khums settings</button></div>
+      </form>
+    </details>
+  </section>
+</section>
+
+</main>
+<div class="toast" id="toast" hidden></div>
+<script src="app.js" defer></script>
+</body>
+</html>
