@@ -283,3 +283,44 @@ h2{font-size:20px;font-weight:700;letter-spacing:-.02em}
   --amber-soft:color-mix(in srgb,var(--amber) 12%,var(--surface)); --amber-line:color-mix(in srgb,var(--amber) 35%,transparent);
   --blue-soft:color-mix(in srgb,var(--blue) 12%,var(--surface)); --blue-line:color-mix(in srgb,var(--blue) 35%,transparent);
   --good:var(--emerald); --good-soft:var(--emerald-soft); --warn:var(--amber); --warn-soft:var(--amber-soft); --due:var(--violet); --due-soft:var(--violet-soft)}
+
+/* ---------- gradients ---------- */
+/* selected meal-plan day: terracotta to plum, white dots */
+.mp-day.sel{background:linear-gradient(140deg,var(--amber),var(--violet));border-color:transparent;color:#fff;box-shadow:0 6px 16px color-mix(in srgb,var(--violet) 30%,transparent)}
+.mp-day.sel .dn{color:rgba(255,255,255,.85)}
+.mp-day.sel .dots i{border-color:rgba(255,255,255,.75)}
+.mp-day.sel .dots i.done{background:#fff;border-color:#fff}
+.mp-day.sel .dots i.over{background:#fde68a;border-color:#fde68a}
+.mp-day .dots i.done{background:var(--emerald);border-color:var(--emerald)}
+
+/* money card: ink with soft petrol and plum glows */
+.hero-dark{background:
+  radial-gradient(120% 140% at 0% 100%,color-mix(in srgb,var(--blue) 38%,transparent),transparent 55%),
+  radial-gradient(90% 120% at 100% 0%,color-mix(in srgb,var(--violet) 34%,transparent),transparent 55%),
+  var(--hero)}
+
+/* tiles: tint fading across the card */
+.tile.due{background:linear-gradient(145deg,color-mix(in srgb,var(--violet) 16%,var(--surface)),color-mix(in srgb,var(--violet) 3%,var(--surface)))}
+.tile.ok{background:linear-gradient(145deg,color-mix(in srgb,var(--emerald) 18%,var(--surface)),color-mix(in srgb,var(--emerald) 3%,var(--surface)))}
+.tile.warn{background:linear-gradient(145deg,color-mix(in srgb,var(--amber) 16%,var(--surface)),color-mix(in srgb,var(--amber) 3%,var(--surface)))}
+.tile-grid .tile:nth-child(4):not(.ok):not(.warn):not(.due){background:linear-gradient(145deg,color-mix(in srgb,var(--blue) 16%,var(--surface)),color-mix(in srgb,var(--blue) 3%,var(--surface)))}
+
+/* prayer cards: tint from the top; prayed card a rich gradient of its time of day */
+.ptile,.prayer{background:linear-gradient(180deg,color-mix(in srgb,var(--pc) 14%,var(--surface)),color-mix(in srgb,var(--pc) 3%,var(--surface)) 70%)}
+.ptile.done{background:linear-gradient(150deg,color-mix(in srgb,var(--pc) 85%,#fff),var(--pc) 45%,color-mix(in srgb,var(--pc) 70%,#000));box-shadow:0 10px 24px color-mix(in srgb,var(--pc) 35%,transparent)}
+#qazaToday > .ptile:nth-child(1){--pc2:var(--c-zohar)}
+
+/* meal cards, usuals and the title underline */
+.mp-slot:has(.mchip.nashta){background:linear-gradient(135deg,color-mix(in srgb,var(--amber) 12%,var(--surface)),var(--surface) 75%)}
+.mp-slot:has(.mchip.dinner){background:linear-gradient(135deg,color-mix(in srgb,var(--blue) 11%,var(--surface)),var(--surface) 75%)}
+.usual:has(.mchip.nashta){background:linear-gradient(160deg,color-mix(in srgb,var(--amber) 13%,var(--surface)),var(--surface))}
+.usual:has(.mchip.dinner){background:linear-gradient(160deg,color-mix(in srgb,var(--blue) 12%,var(--surface)),var(--surface))}
+.usual:has(.mchip.snack){background:linear-gradient(160deg,color-mix(in srgb,var(--c-pink) 12%,var(--surface)),var(--surface))}
+.page-head h1::after{width:72px;background:linear-gradient(90deg,var(--sec),color-mix(in srgb,var(--sec) 30%,var(--violet)))}
+.tabs a[aria-current="page"]{background:linear-gradient(135deg,color-mix(in srgb,var(--t) 18%,var(--surface)),color-mix(in srgb,var(--t) 6%,var(--surface)))}
+.step.done .no{background:linear-gradient(140deg,var(--s),color-mix(in srgb,var(--s) 60%,var(--violet)))}
+.leaf{background:linear-gradient(180deg,color-mix(in srgb,var(--blue) 4%,var(--surface)),var(--surface) 30%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mp-day.sel{background:linear-gradient(140deg,color-mix(in srgb,var(--amber) 65%,#000),color-mix(in srgb,var(--violet) 60%,#000))}
+  :root:not([data-theme="light"]) .ptile.done{background:linear-gradient(150deg,color-mix(in srgb,var(--pc) 75%,#000),color-mix(in srgb,var(--pc) 45%,#000))}}
+:root[data-theme="dark"] .mp-day.sel{background:linear-gradient(140deg,color-mix(in srgb,var(--amber) 65%,#000),color-mix(in srgb,var(--violet) 60%,#000))}
+:root[data-theme="dark"] .ptile.done{background:linear-gradient(150deg,color-mix(in srgb,var(--pc) 75%,#000),color-mix(in srgb,var(--pc) 45%,#000))}
