@@ -194,7 +194,7 @@ const ringSvg = (frac, color, size, track, inner, key, color2) => {
   const id = "rg" + (key || "x"), deg = f * 360 - 90, from = prev * 360 - 90, start = color2 || color;
   const anim = still ? "" : `<animate attributeName="stroke-dashoffset" from="${(C0 * (1 - prev)).toFixed(1)}" to="${off.toFixed(1)}" begin="indefinite" dur="1.1s" calcMode="spline" keySplines="0.22 1 0.36 1" keyTimes="0;1" fill="freeze"/>`;
   const spin = still ? "" : `<animateTransform attributeName="transform" type="rotate" from="${from} 60 60" to="${deg} 60 60" begin="indefinite" dur="1.1s" calcMode="spline" keySplines="0.22 1 0.36 1" keyTimes="0;1" fill="freeze"/>`;
-  const head = f > 0.01 ? `<g transform="rotate(${deg} 60 60)">${spin}<circle cx="112" cy="60" r="9" fill="${color}" opacity=".35"/><circle cx="112" cy="60" r="5.5" fill="#fff"/></g>` : "";
+  const head = f > 0.01 ? `<g transform="rotate(${deg} 60 60)">${spin}<circle cx="112" cy="60" r="7.5" fill="${color}" opacity=".16"/><circle cx="112" cy="60" r="5.5" fill="#fff"/></g>` : "";
   return `<div class="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 120 120" role="img" aria-label="${Math.round(f*100)} percent">` +
     `<defs><linearGradient id="${id}" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="${start}"/><stop offset="1" stop-color="${color}"/></linearGradient></defs>` +
     `<circle cx="60" cy="60" r="52" fill="none" stroke="${track}" stroke-width="11"/>` +
