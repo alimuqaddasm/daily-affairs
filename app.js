@@ -225,6 +225,19 @@ function usuals(){
   return Object.values(g).filter(x => x.xs.length >= 2).sort((a,b) => b.xs.length - a.xs.length).slice(0, 8)
     .map(x => { const s = [...x.xs].sort((a,b) => a-b); return {...x, amount: Math.round(s[Math.floor(s.length/2)]), n: x.xs.length}; });
 }
+/* next due date of a bill: from its due day of month, else 30 days after last payment */
+function billDue(b){
+  const t = todayIso();
+  if (b.dueDay){
+    const td = parse(t); let d = new Date(td.getFullYear(), td.getMonth(), Math.min(b.dueDay, 28));
+    const due = iso(d), paidFor = b.lastPaid && dayDiff(b.lastPaid, due) <= 6 && dayDiff(due, b.lastPaid) <= 20;
+    const done = b.paidBy === "mentor" ? (b.remindedAt && dayDiff(b.remindedAt, due) <= 10 && dayDiff(due, b.remindedAt) <= 20) : paidFor;
+    if (due < t || done) d = new Date(td.getFullYear(), td.getMonth() + 1, Math.min(b.dueDay, 28));
+    return iso(d);
+  }
+  return b.lastPaid ? addDays(b.lastPaid, 30) : C().cycle.nextPay;
+}
+const myBills = () => F().bills.filter(b => b.paidBy !== "mentor");
 let USUALS = [], lastUsual = null, qPending = {}, qT = null;
 
 function renderToday(){
@@ -240,17 +253,21 @@ function renderToday(){
     `<span class="chip-status ${rem >= 0 ? "ok" : "bad"}" style="${rem >= 0 ? "" : "background:rgba(248,113,113,.2);color:#fca5a5"}">${rem >= 0 ? "On track" : "PKR " + fmt(-rem) + " over today"}</span></div>`;
   const third = pendingItems().filter(i => RELIGIOUS.includes(i.type));
   const kaf = third.reduce((s,i) => s + toPkr(itemStatus(i).left || 0, i.currency), 0);
-  const nextBill = F().bills.map(b => ({b, d: b.lastPaid && b.lastPaid >= cfg.cycle.start ? addDays(b.lastPaid, 30) : (b.lastPaid ? addDays(b.lastPaid, 30) : cfg.cycle.nextPay)})).sort((a,b) => a.d.localeCompare(b.d))[0];
+  const nextBill = myBills().map(b => ({b, d: billDue(b)})).sort((a,b) => a.d.localeCompare(b.d))[0];
   const done = DAY.reduce((s,kk) => s + (prayedToday(kk) > 0 ? 1 : 0), 0);
   $("todayTiles").innerHTML =
     tile("Qaza owed", nfEn.format(qazaTotal()), done + " of 5 prayed with today's prayers", "due", "#wajibat") +
     tile("Khums", ks.word, ks.short, ks.cls, "#khums") +
     tile(third.length === 1 ? third[0].type === "kaffara" ? "Kaffara" : "Dues open" : "Dues open", third.length ? "<small>PKR</small>" + fmt(kaf) : "None", third.length ? "still open" : "nothing pending", third.length ? "warn" : "ok", "#money") +
     (nextBill ? tile("Next bill", esc(nextBill.b.name.replace(/\s*\(.*\)/, "")), fmtC(nextBill.b.amount, nextBill.b.currency) + " · " + nice(nextBill.d), "", "#money") : tile("Bills", "None", ""));
-  $("qazaToday").innerHTML = PRAYERS.slice(0, 5).map(([kk,en,ur]) => {
-    const n = +(D.wajibat.qaza.counts||{})[kk] || 0, p = prayedToday(kk) > 0;
-    return `<button type="button" class="ptile${p ? " done" : ""}" data-today-q="${kk}" aria-pressed="${p}"><span class="top"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${PICON[kk]}</svg><b>${nfEn.format(n)}</b></span><span class="nm"><b>${esc(en)}</b><span class="ur" lang="ur">${esc(ur)}</span></span><span class="st">${p ? "Prayed today · tap to undo" : "Tap when prayed"}</span></button>`;
-  }).join("");
+  const qc = D.wajibat.qaza.counts || {};
+  const qTile = ([kk,en,ur], small) => {
+    const n = +qc[kk] || 0, p = Math.max(0, prayedToday(kk)), base = kk.replace("_q", "");
+    return `<div class="ptile${p ? " done" : ""}${small ? " small" : ""}"><button type="button" class="ptap" data-today-q="${kk}" ${n ? "" : "disabled"} aria-label="Prayed one ${esc(en)} qaza"><span class="top"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${PICON[base]}</svg><b>${nfEn.format(n)}</b></span><span class="nm"><b>${esc(en)}</b><span class="ur" lang="ur">${esc(ur)}</span></span></button>` +
+      `<span class="st">${p ? `<button type="button" class="pminus" data-today-undo="${kk}" aria-label="Undo one ${esc(en)} qaza">−</button> ${p} prayed today` : (n ? "Tap for each one prayed" : "None owed")}</span></div>`;
+  };
+  const qasr = PRAYERS.slice(5).filter(([kk]) => (+qc[kk]||0) > 0 || prayedToday(kk) > 0);
+  $("qazaToday").innerHTML = PRAYERS.slice(0, 5).map(x => qTile(x)).join("") + (qasr.length ? `<div class="qasr-row"><span class="eyebrow">Qasr (two rakat)</span>${qasr.map(x => qTile(x, true)).join("")}</div>` : "");
   const per = +$("qPace").value || 1, fin = qazaFinish(per);
   $("qPaceVal").textContent = per; $("qPaceDate").textContent = longDate(fin.date);
   USUALS = usuals();
@@ -258,7 +275,7 @@ function renderToday(){
   renderAfford();
   const tl = [];
   tl.push({d: cfg.cycle.nextPay, cls: "", t: nice(cfg.cycle.nextPay) + " · Pay day", s: "PKR " + fmt(cfg.payAmount)});
-  F().bills.forEach(b => { const d = b.lastPaid ? addDays(b.lastPaid, 30) : cfg.cycle.nextPay; if (dayDiff(todayIso(), d) <= 35) tl.push({d, cls: "bill", t: nice(d) + " · " + b.name, s: fmtC(b.amount, b.currency) + ", about PKR " + fmt(toPkr(b.amount, b.currency))}); });
+  F().bills.forEach(b => { const d = billDue(b); if (dayDiff(todayIso(), d) <= 35) tl.push({d, cls: b.paidBy === "mentor" ? "" : "bill", t: nice(d) + " · " + b.name, s: b.paidBy === "mentor" ? "Paid by your mentor: send him a reminder" : fmtC(b.amount, b.currency) + ", about PKR " + fmt(toPkr(b.amount, b.currency))}); });
   if (kh.kh.next) tl.push({d: kh.kh.next, cls: "kh", t: nice(kh.kh.next) + " · 23 Ramadan", s: "Khums " + (kh.kh.label||"") + " becomes payable, about PKR " + fmt(kh.est)});
   $("timeline").innerHTML = tl.sort((a,b) => a.d.localeCompare(b.d)).map(x => `<li><span class="rail"><span class="dot ${x.cls}"></span><i></i></span><div class="body"><b>${esc(x.t)}</b><div>${esc(x.s)}</div></div></li>`).join("");
 }
@@ -281,6 +298,7 @@ function wasiyatChecks(){
     {ok: !!(p.father_en && p.father_ur), t: "Father's name", s: p.father_en || "Missing", go: "#wajibat"},
     {ok: !!(p.wasi_en && p.wasi_ur), t: "Executor named", s: p.wasi_en || "Missing", go: "#wajibat"},
     {ok: !!p.wasi_contact, t: "Executor's contact", s: p.wasi_contact ? "Saved" : "Missing", go: "#wajibat"},
+    {ok: !!(p.wasi_email || p.wasi2_email), t: "Executors' email", s: [p.wasi_email, p.wasi2_email].filter(Boolean).join(", ") || "Add them to send the wasiyat by email", go: "#wajibat"},
     {ok: !!p.wasi2_en, t: "Backup executor", s: p.wasi2_en || "Needed if the executor cannot act", go: "#wajibat"},
     {ok: !!p.nazir_en, t: "Supervisor (nazir)", s: p.nazir_en || "Optional, guards the executor", go: "#wajibat"},
     {ok: !D.wajibat.items.some(i => i.status === "unclear"), t: "No unclear items", s: "Unclear items stay out of the wasiyat", go: "#wajibat"},
@@ -374,7 +392,7 @@ function renderChart(){
 }
 function renderPlan(){
   const cfg = C(), inc = cfg.payAmount || 0;
-  const billRows = F().bills.map(b => ({label: b.name, v: toPkr(b.amount, b.currency), color: "var(--dinner)", note: fmtC(b.amount, b.currency)}));
+  const billRows = myBills().map(b => ({label: b.name, v: toPkr(b.amount, b.currency), color: "var(--dinner)", note: fmtC(b.amount, b.currency)}));
   const fpl = foodPlan(cfg), save = cfg.savePerCycle || 0, waj = cfg.wajibatPerCycle || 0;
   const wajLeft = pendingItems().filter(i => RELIGIOUS.includes(i.type)).reduce((s,i) => { const st = itemStatus(i); return s + (st.left ? toPkr(st.left, i.currency) : 0); }, 0);
   const used = billRows.reduce((s,r)=>s+r.v,0) + fpl.total + save + waj, buffer = inc - used;
@@ -420,11 +438,17 @@ function renderDebts(){
     (closed.length ? '<li style="display:block"><details><summary class="sm">Settled ('+closed.length+')</summary><ul class="items">'+closed.map(row).join("")+'</ul></details></li>' : "");
 }
 function renderBills(){
-  $("bills").innerHTML = F().bills.length ? F().bills.map(b => {
-    const paid = b.lastPaid && b.lastPaid >= C().cycle.start;
-    return '<li><div><div style="font-weight:700">'+esc(b.name)+'</div><div class="sub">'+fmtC(b.amount,b.currency)+' a month ≈ PKR '+fmt(toPkr(b.amount,b.currency))+(b.lastPaid ? ' · last paid '+nice(b.lastPaid) : '')+'</div></div>' +
-      (paid ? '<span class="pill good">Paid this cycle</span>' : '<button class="btn small ghost" data-pay-bill="'+esc(b.id)+'">Paid</button>') + '</li>';
-  }).join("") : '<li class="empty">No bills yet.</li>';
+  const row = b => {
+    const due = billDue(b), mentor = b.paidBy === "mentor", paid = !mentor && b.lastPaid && b.lastPaid >= C().cycle.start;
+    const sub = fmtC(b.amount,b.currency) + " a month" + (mentor ? "" : " ≈ PKR " + fmt(toPkr(b.amount,b.currency))) + " · due " + nice(due) +
+      (mentor ? (b.remindedAt ? " · reminded " + nice(b.remindedAt) : "") : (b.lastPaid ? " · last paid " + nice(b.lastPaid) : ""));
+    const act = mentor ? '<button class="btn small ghost" data-remind-bill="'+esc(b.id)+'">Reminded</button>' :
+      paid ? '<span class="pill good">Paid this cycle</span>' : '<button class="btn small ghost" data-pay-bill="'+esc(b.id)+'">Paid</button>';
+    return '<li><div><div style="font-weight:700">'+esc(b.name)+(mentor ? ' <span class="pill due">Paid by mentor</span>' : '')+'</div><div class="sub">'+sub+'</div></div>' + act + '</li>';
+  };
+  const mine = myBills(), theirs = F().bills.filter(b => b.paidBy === "mentor");
+  $("bills").innerHTML = (mine.map(row).join("") || '<li class="empty">No bills yet.</li>') +
+    (theirs.length ? '<li style="display:block;border-top:1px solid var(--line);padding-top:12px"><span class="eyebrow">On your account, paid by your mentor (not in your budget)</span></li>' + theirs.map(row).join("") : "");
 }
 function renderBalances(k){
   const cfg = C(), saved = savings();
@@ -717,14 +741,49 @@ $("addForm").addEventListener("submit", e => {
   const doc = {id: uid("t"), date: $("fDate").value || todayIso(), amount: currency === "PKR" ? amount + del : amount, currency,
     pkr: Math.round((toPkr(amount, currency) + del)*100)/100, deliveryFee: del, category: $("fCat").value,
     meal: $("fCat").value === "Food" ? (meal || "other") : "", source: $("fSrc").value,
-    note: [vendor, $("fNote").value.trim(), del ? "incl. delivery " + del : ""].filter(Boolean).join(": ").slice(0, 140), createdAt: new Date().toISOString()};
+    note: [$("fPlace").value.trim() || vendor, $("fNote").value.trim(), del ? "incl. delivery " + del : ""].filter(Boolean).join(": ").slice(0, 140), createdAt: new Date().toISOString()};
   change(d => { d.finance.txns.unshift(doc); }, "Log PKR " + fmt(doc.pkr) + " " + doc.category);
   toast("Added PKR " + fmt(doc.pkr)); closeSheet();
-  $("fAmount").value = ""; $("fNote").value = ""; $("fDel").value = "0"; renderCapHint();
+  $("fAmount").value = ""; $("fNote").value = ""; $("fPlace").value = ""; $("fDel").value = "0"; $("placeHint").innerHTML = ""; renderCapHint();
+});
+/* places and dishes learned from past entries ("Place: 1x Dish, 2x Dish") */
+function menuBook(){
+  const book = {};
+  F().txns.forEach(t => {
+    if (t.category !== "Food" || !t.note) return;
+    const i = t.note.indexOf(":"); if (i < 0) return;
+    const place = t.note.slice(0, i).replace(/\s*\(WhatsApp\)\s*$/i, "").replace(/\s*\(usual\)\s*$/i, "").trim();
+    if (!place || place.length > 50) return;
+    let rest = t.note.slice(i + 1).split(/\. (Food|total|paid|late|inDrive|website|guests|lunch)/)[0];
+    const e = book[place] = book[place] || {n: 0, xs: [], items: {}}; e.n++; e.xs.push(t.pkr);
+    rest.split(/,\s*/).map(x => x.replace(/^\s*\d+x\s*/i, "").replace(/\s+/g, " ").trim()).filter(x => x && x.length < 60 && !/^incl\./.test(x))
+      .forEach(x => e.items[x] = (e.items[x] || 0) + 1);
+  });
+  return book;
+}
+function fillPlaces(){
+  const book = menuBook();
+  $("placeList").innerHTML = Object.entries(book).sort((a,b) => b[1].n - a[1].n).map(([k,v]) => `<option value="${esc(k)}">${v.n} orders</option>`).join("");
+  return book;
+}
+function onPlace(){
+  const book = menuBook(), e = book[$("fPlace").value.trim()], h = $("placeHint");
+  if (!e) { $("dishList").innerHTML = ""; h.innerHTML = ""; return; }
+  const items = Object.entries(e.items).sort((a,b) => b[1] - a[1]);
+  $("dishList").innerHTML = items.map(([k]) => `<option value="${esc(k)}"></option>`).join("");
+  const xs = [...e.xs].sort((a,b) => a-b), med = Math.round(xs[Math.floor(xs.length/2)]);
+  h.innerHTML = `<span class="muted sm">Usually PKR ${fmt(med)} here.</span> <button type="button" class="btn small ghost" data-fill-amt="${med}">Use PKR ${fmt(med)}</button>` +
+    items.slice(0, 6).map(([k]) => ` <button type="button" class="chip dish" data-dish="${esc(k)}">${esc(k)}</button>`).join("");
+  if (!meal && $("fCat").value !== "Food") { $("fCat").value = "Food"; }
+}
+$("fPlace").addEventListener("input", onPlace); $("fPlace").addEventListener("change", onPlace);
+$("placeHint").addEventListener("click", e => {
+  const a = e.target.closest("[data-fill-amt]"); if (a) { $("fAmount").value = a.dataset.fillAmt; renderCapHint(); return; }
+  const d = e.target.closest("[data-dish]"); if (d) { const cur = $("fNote").value.trim(); $("fNote").value = cur ? cur + ", " + d.dataset.dish : d.dataset.dish; }
 });
 
 /* add-spending sheet */
-function openSheet(){ if (!D) { toast("Not connected yet. Open Settings to connect."); return; } $("sheet").hidden = false; $("fDate").value = todayIso(); setTimeout(() => $("fAmount").focus(), 50); }
+function openSheet(){ if (!D) { toast("Not connected yet. Open Settings to connect."); return; } fillPlaces(); $("sheet").hidden = false; $("fDate").value = todayIso(); setTimeout(() => $("fAmount").focus(), 50); }
 function closeSheet(){ $("sheet").hidden = true; }
 $("sheetClose").onclick = closeSheet;
 $("sheet").addEventListener("click", e => { if (e.target === $("sheet")) closeSheet(); });
@@ -757,7 +816,11 @@ document.addEventListener("click", e => {
     change(d => { d.finance.txns.unshift(t); }, "Usual: " + u.vendor); lastUsual = t.id;
     $("usualToastText").textContent = "Logged " + u.vendor + ", PKR " + fmt(u.amount); $("usualToast").hidden = false; clearTimeout(renderAfford._u); renderAfford._u = setTimeout(() => $("usualToast").hidden = true, 8000); return; }
   const tq = e.target.closest("[data-today-q]");
-  if (tq){ const k = tq.dataset.todayQ; bump({[k]: prayedToday(k) > 0 ? 1 : -1}); return; }
+  if (tq){ bump({[tq.dataset.todayQ]: -1}); return; }
+  const tu = e.target.closest("[data-today-undo]");
+  if (tu){ const k = tu.dataset.todayUndo; if (prayedToday(k) > 0) bump({[k]: 1}); return; }
+  const rb = e.target.closest("[data-remind-bill]");
+  if (rb){ const id = rb.dataset.remindBill, dt = todayIso(); change(d => { const x = d.finance.bills.find(y => y.id === id); if (x) x.remindedAt = dt; }, "Reminded mentor"); toast("Marked: reminder sent to your mentor"); return; }
   if (e.target.closest("[data-signed]")) { const dt = todayIso(); const key = willKey(); change(d => { d.wajibat.profile = {...d.wajibat.profile, signedAt: dt, signedKey: key}; }, "Wasiyat signed"); toast("Recorded: wasiyat signed today"); return; }
   const ed = e.target.closest("[data-edit]"); if (ed){ itemForm(D.wajibat.items.find(i => i.id === ed.dataset.edit)); return; }
   const clr = e.target.closest("[data-clear]");
@@ -828,6 +891,16 @@ $("khCloseForm").addEventListener("submit", e => { e.preventDefault();
 async function copy(el){ const t = leafText(el); try { await navigator.clipboard.writeText(t); toast("Copied"); } catch(e){ const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Selected. Use copy on your device."); } }
 $("copyUr").onclick = () => copy($("leafUr")); $("copyEn").onclick = () => copy($("leafEn"));
 $("printW").onclick = () => window.print();
+$("sendW").onclick = async () => {
+  if (!D) return;
+  const p = D.wajibat.profile || {}, to = [p.wasi_email, p.wasi2_email].filter(Boolean);
+  const subject = "Wasiyat of " + (p.name_en || "me") + ", updated " + longDate(todayIso());
+  const text = "Assalamu alaikum,\n\nPlease keep this copy of my wasiyat. It is the latest version, as of " + longDate(todayIso()) + ".\n\n" + leafText($("leafUr")) + "\n\n----------\n\n" + leafText($("leafEn"));
+  if (!to.length && !navigator.share) { toast("Add the executors' email addresses under Wajibat, Wasiyat details"); location.hash = "#wajibat"; return; }
+  if (navigator.share && matchMedia("(max-width:760px)").matches) { try { await navigator.share({title: subject, text}); return; } catch(e) { if (e && e.name === "AbortError") return; } }
+  if (!to.length) { toast("Add the executors' email addresses under Wajibat, Wasiyat details"); location.hash = "#wajibat"; return; }
+  location.href = "mailto:" + to.map(encodeURIComponent).join(",") + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(text);
+};
 $("dlWasiyat").onclick = () => {
   const css = [...document.styleSheets].map(s => { try { return [...s.cssRules].map(r => r.cssText).join("\n"); } catch(e) { return ""; } }).join("\n");
   const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wasiyat ${todayIso()}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600&family=Amiri:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,650&display=swap"><style>${css}

@@ -205,6 +205,8 @@
         <label>Executor (wasi), English<input name="wasi_en"></label>
         <label>Executor (wasi), Urdu<input name="wasi_ur" class="ur" dir="rtl" lang="ur"></label>
         <label>Executor's contact<input name="wasi_contact" dir="ltr"></label>
+        <label>Executor's email<input name="wasi_email" type="email" dir="ltr" autocomplete="off"></label>
+        <label>Backup executor's email<input name="wasi2_email" type="email" dir="ltr" autocomplete="off"></label>
         <label>Backup executor, English<input name="wasi2_en"></label>
         <label>Backup executor, Urdu<input name="wasi2_ur" class="ur" dir="rtl" lang="ur"></label>
         <label>Supervisor (nazir), English (optional)<input name="nazir_en"></label>
@@ -225,7 +227,7 @@
 <!-- ================= WASIYAT ================= -->
 <section class="view" id="v-wasiyat" hidden>
   <div class="page-head"><div><div class="eyebrow">Rebuilt live from qaza, dues, debts and the khums ledger</div><h1 class="bi">Wasiyat nama <span class="ur" lang="ur">وصیت نامہ</span></h1></div>
-    <div class="toolbar"><button class="btn ghost" type="button" id="copyUr">Copy Urdu</button><button class="btn ghost" type="button" id="copyEn">Copy English</button><button class="btn ghost" type="button" id="dlWasiyat">Download</button><button class="btn" type="button" id="printW">Print to sign</button></div></div>
+    <div class="toolbar"><button class="btn ghost" type="button" id="copyUr">Copy Urdu</button><button class="btn ghost" type="button" id="copyEn">Copy English</button><button class="btn ghost" type="button" id="dlWasiyat">Download</button><button class="btn ghost" type="button" id="printW">Print to sign</button><button class="btn" type="button" id="sendW">Send to executors</button></div></div>
   <div class="banner" id="signedBanner"></div>
   <div class="wasiyat">
     <article class="leaf ur-leaf" id="leafUr" lang="ur" dir="rtl"></article>
@@ -319,7 +321,12 @@
       </select></label>
       <label>Date<input id="fDate" type="date" required></label>
     </div>
-    <label>Note<input id="fNote" type="text" maxlength="140" placeholder="e.g. paratha and chai"></label>
+    <div class="row">
+      <label>Restaurant or shop<input id="fPlace" type="text" list="placeList" maxlength="50" placeholder="Start typing, e.g. Rox Burger"></label>
+      <label>What you had<input id="fNote" type="text" list="dishList" maxlength="120" placeholder="Pick from past orders or type"></label>
+    </div>
+    <datalist id="placeList"></datalist><datalist id="dishList"></datalist>
+    <div class="place-hint" id="placeHint"></div>
     <div class="hint" id="capHint" aria-live="polite"></div>
     <button class="btn big-btn" id="addBtn" type="submit">Save</button>
   </form>

@@ -116,7 +116,8 @@ a.tile:hover{border-color:var(--accent)}
 .banner.ok{border-color:var(--accent);background:var(--good-soft)}
 
 /* prayers */
-.prayer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.prayer-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.prayer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ptile{font:inherit;cursor:pointer;text-align:left;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);min-height:132px}
 .ptile:hover{border-color:var(--qaza)}
 .ptile .top{display:flex;align-items:center;justify-content:space-between}
@@ -126,6 +127,17 @@ a.tile:hover{border-color:var(--accent)}
 .ptile .nm .ur{font-size:13px;opacity:.75;text-align:left}
 .ptile .st{font-size:12px;font-weight:600;opacity:.85}
 .ptile.done{background:var(--qaza);border-color:var(--qaza);color:#fff}
+.ptile{cursor:default;padding:0;gap:0}
+.ptile .ptap{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left;padding:16px 16px 6px;display:flex;flex-direction:column;gap:10px;width:100%}
+.ptile .ptap:disabled{cursor:default;opacity:.6}
+.ptile .st{padding:0 16px 14px;display:flex;align-items:center;gap:8px;min-height:36px}
+.pminus{font:inherit;font-weight:700;width:30px;height:30px;border-radius:9px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;line-height:1}
+.qasr-row{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.qasr-row .eyebrow{flex-basis:100%}
+.ptile.small{min-height:0;flex:1 1 150px}
+.ptile.small .top b{font-size:22px}
+.place-hint{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip.dish{min-height:32px;padding:4px 10px;font-size:.8rem}
 .pace-row{display:flex;flex-wrap:wrap;align-items:center;gap:14px;border-top:1px solid var(--line);padding-top:14px}
 .pace-row label{font-weight:600;font-size:14px}
 .range{width:100%;max-width:260px;accent-color:var(--accent)}
