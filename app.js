@@ -920,14 +920,18 @@ function fillSettings(){
   set("cNashtaN", cfg.mealsPerCycle?.nashta); set("cDinnerN", cfg.mealsPerCycle?.dinner); set("cSnackN", cfg.mealsPerCycle?.snack);
   set("cOtherFood", cfg.otherFood); set("cPay", cfg.payAmount); set("cSave", cfg.savePerCycle); set("cWaj", cfg.wajibatPerCycle);
   set("cOpen", cfg.cycle.opening); set("cStart", cfg.cycle.start); set("cNext", cfg.cycle.nextPay);
-  set("pAmount", cfg.payAmount); set("pDate", todayIso());
+  set("pAmount", cfg.payAmount); set("pDate", cfg.cycle.nextPay); $("payBtn").dataset.armed = ""; $("payBtn").textContent = "Start new cycle";
   set("kLabel", kh.label); set("kGreg", kh.gregorian); set("kNext", kh.next); set("kCarry", kh.carryPkr);
   payPreview();
 }
-function payPreview(){ if (!D) return; const k = compute(), amt = +$("pAmount").value || 0, dt = $("pDate").value || todayIso();
-  $("payPreview").textContent = "New cycle opens with PKR " + fmt(Math.max(0,k.left) + amt) + " (PKR " + fmt(Math.max(0,k.left)) + " carried over + PKR " + fmt(amt) + "). Next pay expected " + nice(addDays(dt, C().cycleDays || 28)) + "."; }
-["pAmount","pDate"].forEach(id => $(id).addEventListener("input", payPreview));
-$("payForm").onsubmit = e => { e.preventDefault(); const k = compute(), amt = +$("pAmount").value || 0, dt = $("pDate").value || todayIso();
+function payPreview(){ if (!D) return; const k = compute(), amt = +$("pAmount").value || 0, dt = $("pDate").value || C().cycle.nextPay, early = dayDiff(dt, C().cycle.nextPay);
+  $("payPreview").innerHTML = esc("New cycle opens on " + nice(dt) + " with PKR " + fmt(Math.max(0,k.left) + amt) + " (PKR " + fmt(Math.max(0,k.left)) + " carried over + PKR " + fmt(amt) + "). Next pay expected " + nice(addDays(dt, C().cycleDays || 28)) + ".") +
+    (early > 2 ? '<br><b class="warn-text">' + esc("This ends the current cycle " + early + " days early. Your pay is expected on " + nice(C().cycle.nextPay) + ".") + "</b>" : "");
+  $("payBtn").dataset.armed = ""; $("payBtn").textContent = "Start new cycle"; }
+$("payForm").onsubmit = e => { e.preventDefault(); const btn = $("payBtn");
+  if (btn.dataset.armed !== "1") { btn.dataset.armed = "1"; btn.textContent = "Tap again to confirm"; setTimeout(() => { if (btn.dataset.armed === "1") { btn.dataset.armed = ""; btn.textContent = "Start new cycle"; } }, 6000); return; }
+  btn.dataset.armed = ""; btn.textContent = "Start new cycle";
+  const k = compute(), amt = +$("pAmount").value || 0, dt = $("pDate").value || C().cycle.nextPay;
   const cyc = {start: dt, nextPay: addDays(dt, C().cycleDays || 28), opening: Math.round(Math.max(0, k.left) + amt)};
   change(d => { d.finance.config.cycle = cyc; d.finance.config.lastPaid = {date: dt, amount: amt}; }, "New pay cycle"); $("payDetails").open = false; toast("New cycle started"); };
 $("rateForm").onsubmit = e => { e.preventDefault(); const rates = {}; CURRENCIES.forEach(([c]) => { if (c === "PKR") return; const v = +($("rate-"+c)?.value); if (v > 0) rates[c] = v; });

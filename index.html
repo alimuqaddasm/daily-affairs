@@ -254,12 +254,12 @@
     </section>
     <section class="card">
       <h2>Money and khums settings</h2>
-      <details id="payDetails" open><summary>I got paid: start a new cycle</summary>
+      <details id="payDetails"><summary>I got paid: start a new cycle</summary>
         <form id="payForm" class="panel">
           <label>Amount received (PKR)<input id="pAmount" type="number" min="0" step="any" class="num"></label>
           <label>Received on<input id="pDate" type="date"></label>
           <p class="full muted sm" id="payPreview"></p>
-          <div class="full"><button class="btn" type="submit">Start new cycle</button></div>
+          <div class="full"><button class="btn" type="submit" id="payBtn">Start new cycle</button></div>
         </form></details>
       <details><summary>Exchange rates (PKR per 1 unit)</summary>
         <form id="rateForm" class="panel"><div class="full row" id="rateRow"></div>

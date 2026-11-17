@@ -356,3 +356,5 @@ td.r,th.r{text-align:right}
   body,.leaf{background:#fff;color:#111;border:0}
   .wasiyat{display:block}.leaf{page-break-after:always;padding:0}
 }
+
+.warn-text{color:var(--warn)}
