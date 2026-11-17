@@ -41,7 +41,7 @@ const parse = s => { const [y,m,d] = String(s).split("-").map(Number); return ne
 const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate()+n); return iso(d); };
 const dayDiff = (a, b) => Math.round((parse(b) - parse(a)) / 86400000);
 const fmt = n => (Math.round(n) || 0).toLocaleString("en-PK");
-const fmtC = (n, c) => !c || c === "PKR" ? "PKR " + fmt(n) : c + " " + (+n).toLocaleString("en-PK", {maximumFractionDigits: 2});
+const fmtC = (n, c) => !c || c === "PKR" ? "PKR " + fmt(n) : c + " " + (+n).toLocaleString("en-PK", {maximumFractionDigits: Math.abs(+n) >= 1000 ? 0 : 2});
 const nice = s => parse(s).toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"});
 const longDate = s => parse(s).toLocaleDateString("en-GB", {day:"numeric", month:"long", year:"numeric"});
 const uid = p => (p||"x") + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
@@ -182,31 +182,135 @@ function khums(){
 /* ================= rendering: shared ================= */
 function renderAll(){
   if (!D) return;
-  renderToday(); renderMoney(); renderKhums(); renderWajibat(); renderWasiyat();
+  renderToday(); renderPlanner(); renderMoney(); renderKhums(); renderWajibat(); renderWasiyat(); renderSettingsChip();
 }
-const tile = (val, label, cls, href) => `<${href?'a href="'+href+'"':'div'} class="tile ${cls||""}"><b>${val}</b><span>${label}</span></${href?"a":"div"}>`;
+const tile = (label, val, sub, cls, href) => `<${href?'a href="'+href+'"':'div'} class="tile ${cls||""}"><span>${label}</span><b class="${String(val).length > 9 && !/^<small/.test(val) ? "word" : ""}">${val}</b><span>${sub||""}</span></${href?"a":"div"}>`;
+const ringSvg = (frac, color, size, track, inner) => {
+  const C0 = 326.7, off = (C0 * (1 - Math.max(0, Math.min(1, frac)))).toFixed(1);
+  return `<div class="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 120 120" role="img" aria-label="${Math.round(frac*100)} percent"><circle cx="60" cy="60" r="52" fill="none" stroke="${track}" stroke-width="11"/><circle cx="60" cy="60" r="52" fill="none" stroke="${color}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${C0}" stroke-dashoffset="${off}" transform="rotate(-90 60 60)"/></svg><div class="lbl">${inner}</div></div>`;
+};
+const PICON = {
+  fajr: '<path d="M3 17h1m16 0h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7m-9.7 5.7a4 4 0 0 1 8 0"/><path d="M3 21l18 0"/><path d="M12 9v-6l3 3m-6 0l3 -3"/>',
+  zohar: '<path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/>',
+  asr: '<path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M4 12h.01"/><path d="M12 4v.01"/><path d="M20 12h.01"/><path d="M12 20v.01"/><path d="M6.31 6.31l-.01 -.01"/><path d="M17.71 6.31l-.01 -.01"/><path d="M17.7 17.7l.01 .01"/><path d="M6.3 17.7l.01 .01"/>',
+  maghrib: '<path d="M3 13h1"/><path d="M20 13h1"/><path d="M5.6 6.6l.7 .7"/><path d="M18.4 6.6l-.7 .7"/><path d="M8 13a4 4 0 1 1 8 0"/><path d="M3 17h18"/><path d="M7 20h5"/><path d="M16 20h1"/><path d="M12 5v-1"/>',
+  esha: '<path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/>'
+};
+/* qaza prayed today = net qaza logged as offered today for that prayer */
+function prayedToday(k){ const t = todayIso(); return -(D.wajibat.log||[]).filter(l => l.at && iso(new Date(l.at)) === t).reduce((s,l) => s + ((l.changes||{})[k]||0), 0) - (qPending[k]||0); }
+/* what a signed copy must still match: people, debts, dues and unpaid khums (qaza counts only ever go down, so they do not void a copy) */
+function willKey(){
+  const p = {...(D.wajibat.profile||{})}; delete p.signedAt; delete p.signedKey; delete p.updatedAt;
+  const kh = khums();
+  const str = JSON.stringify([p, openDebts().map(d => [d.id, Math.round(debtStatus(d).leftNative)]), pendingItems().map(i => [i.id, itemStatus(i).left]), kh.unpaid.map(y => [y.year, Math.round(y.unpaid)])]);
+  let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return String(h);
+}
+function qazaFinish(perDay){ const c = D.wajibat.qaza.counts||{}; const days = Math.ceil(Math.max(0, ...DAY.map(k => +c[k]||0)) / perDay); return {days, date: addDays(todayIso(), days)}; }
+/* khums status wording shared by every tab */
+function khumsStatus(kh){
+  if (kh.unpaid.length) return {cls:"warn", word:"Unpaid", short:"Owed: " + kh.unpaid.map(y => y.year + " " + fmtC(y.unpaid, y.c)).join(", ")};
+  const due = kh.daysTo == null ? "date not set" : kh.daysTo < 0 ? "date passed, close the year" : "payable 23 Ramadan, in " + kh.daysTo + " days";
+  return {cls:"ok", word:"Nothing owed", short:due};
+}
+function lastYearNote(kh){ const y = kh.years[0]; if (!y) return ""; return y.year + ": " + (!(y.khumsDue > 0) ? "none was due" : y.unpaid <= 0.5 ? "paid in full" : fmtC(y.unpaid, y.c) + " unpaid"); }
+function usuals(){
+  const since = addDays(todayIso(), -150), g = {};
+  F().txns.forEach(t => {
+    if (t.category !== "Food" || t.date < since || !t.note || t.importedFrom === undefined && !t.vendor && t.note.indexOf(":") < 0) return;
+    const vendor = (t.vendor || t.note.split(":")[0]).replace(/\s*\(WhatsApp\)\s*$/i, "").replace(/\s+-\s+.*$/, "").trim();
+    if (!vendor || vendor.length > 40) return;
+    const m = MEALS[t.meal] ? t.meal : "other", key = vendor + "|" + m;
+    (g[key] = g[key] || {vendor, meal: m, xs: [], src: t.source || "Cash"}).xs.push(t.pkr);
+  });
+  return Object.values(g).filter(x => x.xs.length >= 2).sort((a,b) => b.xs.length - a.xs.length).slice(0, 8)
+    .map(x => { const s = [...x.xs].sort((a,b) => a-b); return {...x, amount: Math.round(s[Math.floor(s.length/2)]), n: x.xs.length}; });
+}
+let USUALS = [], lastUsual = null, qPending = {}, qT = null;
 
 function renderToday(){
-  const k = compute(), kh = khums(), q = qazaTotal();
-  const rem = k.allowToday - k.spentToday;
+  const k = compute(), kh = khums(), ks = khumsStatus(kh), cfg = C();
+  const rem = k.allowToday - k.spentToday, frac = k.allowToday > 0 ? rem / k.allowToday : 0;
+  const now = new Date();
+  $("todayDate").textContent = now.toLocaleDateString("en-GB", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
+  $("todayCycle").textContent = "Cycle day " + Math.min(k.len, dayDiff(cfg.cycle.start, todayIso()) + 1) + " of " + k.len + " · pay " + nice(cfg.cycle.nextPay);
+  const rc = rem >= k.allowToday * 0.25 ? "#2dd4bf" : rem >= 0 ? "#fbbf24" : "#f87171";
+  $("todayHero").innerHTML = ringSvg(frac, rc, 148, "rgba(255,255,255,.12)", `<small>today</small>${Math.max(0, Math.round(frac*100))}%`) +
+    `<div class="hero-copy"><span class="eyebrow">Safe to spend today</span><b class="big">PKR ${fmt(Math.max(0, rem))}</b>` +
+    `<span class="soft">PKR ${fmt(k.left)} left for the cycle · PKR ${fmt(k.spentToday)} spent today</span>` +
+    `<span class="chip-status ${rem >= 0 ? "ok" : "bad"}" style="${rem >= 0 ? "" : "background:rgba(248,113,113,.2);color:#fca5a5"}">${rem >= 0 ? "On track" : "PKR " + fmt(-rem) + " over today"}</span></div>`;
   const third = pendingItems().filter(i => RELIGIOUS.includes(i.type));
+  const kaf = third.reduce((s,i) => s + toPkr(itemStatus(i).left || 0, i.currency), 0);
+  const nextBill = F().bills.map(b => ({b, d: b.lastPaid && b.lastPaid >= cfg.cycle.start ? addDays(b.lastPaid, 30) : (b.lastPaid ? addDays(b.lastPaid, 30) : cfg.cycle.nextPay)})).sort((a,b) => a.d.localeCompare(b.d))[0];
+  const done = DAY.reduce((s,kk) => s + (prayedToday(kk) > 0 ? 1 : 0), 0);
   $("todayTiles").innerHTML =
-    tile("<small>PKR</small>" + fmt(k.left), "left to spend this cycle", "accent", "#money") +
-    tile("<small>PKR</small>" + fmt(Math.max(0, rem)), rem >= 0 ? "safe to spend today" : "PKR " + fmt(-rem) + " over today", rem < 0 ? "bad" : "", "#money") +
-    tile(nfEn.format(q), "qaza prayers pending", q ? "" : "", "#wajibat") +
-    tile("<small>PKR</small>" + fmt(kh.est), "khums estimate, " + (kh.daysTo == null ? "date not set" : kh.daysTo + " days to 23 Ramadan"), kh.unpaid.length ? "warn" : "", "#khums") +
-    tile(nfEn.format(third.length + kh.unpaid.length), "religious dues open", third.length ? "warn" : "", "#wajibat") +
-    tile(nfEn.format(openDebts().length), "loans still open", "", "#money");
-  const c = D.wajibat.qaza.counts || {};
-  $("qazaMini").innerHTML = PRAYERS.filter(([key]) => +c[key] > 0).map(([key,en]) => `<span>${esc(en)} <b>${nfEn.format(c[key])}</b></span>`).join("") || '<span>No qaza pending</span>';
-  const up = [];
-  const dTo = dayDiff(todayIso(), C().cycle.nextPay);
-  up.push({d: C().cycle.nextPay, t: "Pay day", s: dTo + " days · PKR " + fmt(C().payAmount)});
-  F().bills.forEach(b => { if (!(b.lastPaid && b.lastPaid >= C().cycle.start)) up.push({d: b.lastPaid ? addDays(b.lastPaid, 30) : C().cycle.nextPay, t: b.name, s: fmtC(b.amount, b.currency) + " bill, not yet paid this cycle"}); });
-  if (kh.kh.next) up.push({d: kh.kh.next, t: "Khums " + (kh.kh.label||""), s: "Estimate PKR " + fmt(kh.est) + " · depends on moon sighting"});
-  third.forEach(i => { const st = itemStatus(i); up.push({d: "9999", t: i.title, s: (st.left != null ? fmtC(st.left, i.currency) + " left" : "amount not set")}); });
-  $("upcoming").innerHTML = up.sort((a,b) => a.d.localeCompare(b.d)).map(u => `<li><div><div style="font-weight:700">${esc(u.t)}</div><div class="sub">${esc(u.s)}</div></div><span class="muted sm">${u.d === "9999" ? "open" : nice(u.d)}</span></li>`).join("");
+    tile("Qaza owed", nfEn.format(qazaTotal()), done + " of 5 prayed with today's prayers", "due", "#wajibat") +
+    tile("Khums", ks.word, ks.short, ks.cls, "#khums") +
+    tile(third.length === 1 ? third[0].type === "kaffara" ? "Kaffara" : "Dues open" : "Dues open", third.length ? "<small>PKR</small>" + fmt(kaf) : "None", third.length ? "still open" : "nothing pending", third.length ? "warn" : "ok", "#money") +
+    (nextBill ? tile("Next bill", esc(nextBill.b.name.replace(/\s*\(.*\)/, "")), fmtC(nextBill.b.amount, nextBill.b.currency) + " · " + nice(nextBill.d), "", "#money") : tile("Bills", "None", ""));
+  $("qazaToday").innerHTML = PRAYERS.slice(0, 5).map(([kk,en,ur]) => {
+    const n = +(D.wajibat.qaza.counts||{})[kk] || 0, p = prayedToday(kk) > 0;
+    return `<button type="button" class="ptile${p ? " done" : ""}" data-today-q="${kk}" aria-pressed="${p}"><span class="top"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${PICON[kk]}</svg><b>${nfEn.format(n)}</b></span><span class="nm"><b>${esc(en)}</b><span class="ur" lang="ur">${esc(ur)}</span></span><span class="st">${p ? "Prayed today · tap to undo" : "Tap when prayed"}</span></button>`;
+  }).join("");
+  const per = +$("qPace").value || 1, fin = qazaFinish(per);
+  $("qPaceVal").textContent = per; $("qPaceDate").textContent = longDate(fin.date);
+  USUALS = usuals();
+  $("usuals").innerHTML = USUALS.length ? USUALS.map((u, i) => `<button type="button" class="usual" data-usual="${i}"><span class="mchip ${u.meal}">${u.meal === "other" ? "Food" : MEALS[u.meal]}</span><b>${esc(u.vendor)}</b><span class="muted">PKR ${fmt(u.amount)} · ${u.n} orders</span></button>`).join("") : '<div class="empty">Usuals appear once you have ordered from a place twice.</div>';
+  renderAfford();
+  const tl = [];
+  tl.push({d: cfg.cycle.nextPay, cls: "", t: nice(cfg.cycle.nextPay) + " · Pay day", s: "PKR " + fmt(cfg.payAmount)});
+  F().bills.forEach(b => { const d = b.lastPaid ? addDays(b.lastPaid, 30) : cfg.cycle.nextPay; if (dayDiff(todayIso(), d) <= 35) tl.push({d, cls: "bill", t: nice(d) + " · " + b.name, s: fmtC(b.amount, b.currency) + ", about PKR " + fmt(toPkr(b.amount, b.currency))}); });
+  if (kh.kh.next) tl.push({d: kh.kh.next, cls: "kh", t: nice(kh.kh.next) + " · 23 Ramadan", s: "Khums " + (kh.kh.label||"") + " becomes payable, about PKR " + fmt(kh.est)});
+  $("timeline").innerHTML = tl.sort((a,b) => a.d.localeCompare(b.d)).map(x => `<li><span class="rail"><span class="dot ${x.cls}"></span><i></i></span><div class="body"><b>${esc(x.t)}</b><div>${esc(x.s)}</div></div></li>`).join("");
 }
+function renderAfford(){
+  if (!D) return;
+  const k = compute(), safe = k.allowToday - k.spentToday, amt = +$("afford").value || 0, h = $("affordHead"), b = $("affordBody");
+  if (!(amt > 0)) { h.className = "chip-status"; h.textContent = "Type a price"; b.textContent = "See whether it fits today before you order."; return; }
+  const after = safe - amt, rest = k.left - amt;
+  if (after >= 0) { h.className = "chip-status ok"; h.textContent = "Yes, it fits"; b.textContent = "Leaves PKR " + fmt(after) + " for the rest of today."; }
+  else if (rest >= 0) { h.className = "chip-status warn"; h.textContent = "Over today by PKR " + fmt(-after); b.textContent = "The cycle can take it, but each remaining day drops to about PKR " + fmt(rest / Math.max(1, k.daysLeft - 1)) + "."; }
+  else { h.className = "chip-status bad"; h.textContent = "Not this cycle"; b.textContent = "That is PKR " + fmt(-rest) + " more than is left until pay day."; }
+}
+
+/* ================= planners ================= */
+function wasiyatChecks(){
+  const p = D.wajibat.profile || {}, signed = p.signedAt;
+  const stale = signed && p.signedKey && p.signedKey !== willKey();
+  return [
+    {ok: !!(p.name_en && p.name_ur), t: "Your name, English and Urdu", s: p.name_en || "Add it in Wajibat, Wasiyat details", go: "#wajibat"},
+    {ok: !!(p.father_en && p.father_ur), t: "Father's name", s: p.father_en || "Missing", go: "#wajibat"},
+    {ok: !!(p.wasi_en && p.wasi_ur), t: "Executor named", s: p.wasi_en || "Missing", go: "#wajibat"},
+    {ok: !!p.wasi_contact, t: "Executor's contact", s: p.wasi_contact ? "Saved" : "Missing", go: "#wajibat"},
+    {ok: !!p.wasi2_en, t: "Backup executor", s: p.wasi2_en || "Needed if the executor cannot act", go: "#wajibat"},
+    {ok: !!p.nazir_en, t: "Supervisor (nazir)", s: p.nazir_en || "Optional, guards the executor", go: "#wajibat"},
+    {ok: !D.wajibat.items.some(i => i.status === "unclear"), t: "No unclear items", s: "Unclear items stay out of the wasiyat", go: "#wajibat"},
+    {ok: !!signed && !stale, t: "Printed and signed, two witnesses", s: !signed ? "Never recorded" : stale ? "Signed " + longDate(signed) + ", records changed since" : "Signed " + longDate(signed), sign: true}
+  ];
+}
+function renderPlanner(){
+  const kh = khums(), ks = khumsStatus(kh), extra = +$("plExtra").value || 0;
+  const st = $("plKhStatus"); st.className = "chip-status " + ks.cls; st.textContent = ks.word === "Nothing owed" ? "Nothing owed now" : ks.short;
+  const ly = kh.years[0];
+  $("plKhLine").innerHTML = `<div class="node"><span></span>${esc(ly ? ly.year : "Last year")}<br>${esc(ly ? (!(ly.khumsDue > 0) ? "none due" : ly.unpaid <= .5 ? "paid" : "unpaid") : "")}</div><span class="seg"></span><div class="node now"><span></span>Today<br>${esc(nice(todayIso()))}</div><span class="seg dash"></span><div class="node due"><span></span>23 Ramadan<br>${esc(kh.kh.next ? nice(kh.kh.next) : "set date")}</div>`;
+  $("plKhNote").textContent = (kh.kh.label || "This year") + " becomes payable " + (kh.daysTo != null && kh.daysTo >= 0 ? "in " + kh.daysTo + " days" : "on 23 Ramadan") + ". Until then this is a running estimate that moves with your savings.";
+  const held = kh.held + extra, tax = Math.max(0, held - (kh.hasCarry ? kh.kh.carryPkr : 0));
+  $("plExtraVal").textContent = "PKR " + fmt(extra); $("plHeld").textContent = fmt(held); $("plTax").textContent = fmt(tax); $("plKh").textContent = "PKR " + fmt(tax / 5);
+  const third = pendingItems().filter(i => FROM_THIRD.includes(i.type)), open = third.reduce((s,i) => s + toPkr(itemStatus(i).left || 0, i.currency), 0);
+  $("plKafOpen").textContent = open ? "PKR " + fmt(open) + " open" : "Nothing open";
+  const per = +$("plPer").value || 6000, n = open ? Math.ceil(open / per) : 0;
+  $("plPerVal").textContent = "PKR " + fmt(per);
+  $("plKafRing").innerHTML = ringSvg(open ? Math.min(1, per / open) : 1, "#d97706", 120, "var(--line)", `${n}<small>${n === 1 ? "pay" : "pays"}</small>`);
+  $("plClear").textContent = n ? longDate(addDays(C().cycle.nextPay, 28 * (n - 1))) : "already clear";
+  const c = D.wajibat.qaza.counts || {}, q = +$("plQ").value || 1, mx = Math.max(1, ...DAY.map(k => +c[k]||0));
+  $("plQazaOwed").textContent = nfEn.format(qazaTotal()) + " owed"; $("plQVal").textContent = q;
+  $("plQBars").innerHTML = PRAYERS.slice(0, 5).map(([k,en]) => { const v = +c[k]||0; return `<div class="b"><b>${esc(en)}</b><div><i style="width:${v / mx * 100}%"></i></div><span>${v ? nice(addDays(todayIso(), Math.ceil(v / q))) : "done"}</span></div>`; }).join("");
+  $("plQAll").textContent = longDate(qazaFinish(q).date);
+  const ch = wasiyatChecks(), okN = ch.filter(x => x.ok).length;
+  $("plWRing").innerHTML = ringSvg(okN / ch.length, "#0d9488", 96, "var(--line)", Math.round(okN / ch.length * 100) + "%");
+  $("plWMissing").textContent = okN === ch.length ? "Ready. Print and sign again after big changes." : (ch.length - okN) + " thing" + (ch.length - okN === 1 ? "" : "s") + " left before it is ready to sign.";
+  $("plChecks").innerHTML = ch.map(x => `<div class="check${x.ok ? "" : " miss"}"><span class="box">${x.ok ? '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px;stroke-width:3"><path d="M5 12l5 5l10 -10"/></svg>' : ""}</span><span class="tx"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></span>${x.sign ? '<button class="btn small ghost" type="button" data-signed>Signed today</button>' : x.ok ? "" : '<a class="btn small ghost" href="' + x.go + '">Fix</a>'}</div>`).join("");
+}
+function renderSettingsChip(){ const c = $("connChip"); if (!c) return; c.className = "chip-status " + (base ? "ok" : ""); c.textContent = base ? "Connected" : "Not connected"; }
 
 /* ================= money ================= */
 let meal = "";
@@ -359,13 +463,19 @@ function renderCapHint(){
 /* ================= khums ================= */
 function renderKhums(){
   const m = khums(), kh = m.kh;
-  $("khLabel").textContent = kh.label || "this year"; $("khGreg").textContent = kh.gregorian ? " (" + kh.gregorian + ")" : "";
-  $("khHeld").innerHTML = "<small>PKR</small>" + fmt(m.held);
-  $("khCarry").innerHTML = m.hasCarry ? "<small>PKR</small>" + fmt(kh.carryPkr) : "Not set";
-  $("khCarrySub").textContent = m.hasCarry ? "already taxed, not counted again" : "Add last year's savings figure in Settings";
-  $("khEst").innerHTML = "<small>PKR</small>" + fmt(m.est);
-  $("khEstSub").textContent = !m.hasCarry ? "Before subtracting mukhamas, so likely too high" : m.taxable > 0 ? "One fifth of PKR " + fmt(m.taxable) : "Holdings are below the mukhamas: none due at this rate";
-  if (kh.next){ $("khIn").textContent = m.daysTo < 0 ? "Passed" : m.daysTo + " days"; $("khDate").textContent = "about " + nice(kh.next) + ", depends on moon sighting"; }
+  const ks = khumsStatus(m);
+  const st = $("khStatus"); st.className = "chip-status " + ks.cls; st.textContent = ks.word === "Nothing owed" ? "Nothing owed today" : ks.short;
+  $("khLast").textContent = lastYearNote(m); $("khLast").hidden = !m.years.length;
+  $("khPayable").textContent = "Payable on 23 Ramadan " + (kh.label || "") + (m.daysTo != null && m.daysTo >= 0 ? " · in " + m.daysTo + " days" : "");
+  $("khEst").innerHTML = "<small>about PKR</small>" + fmt(m.est);
+  $("khEstSub").textContent = !m.hasCarry ? "Running estimate before subtracting mukhamas, so likely too high" : m.taxable > 0 ? "Running estimate: one fifth of PKR " + fmt(m.taxable) + " you hold above the mukhamas. It moves with your savings until the day." : "Holdings are below the mukhamas, so none would be due at this rate";
+  $("khDate").textContent = kh.next ? "About " + longDate(kh.next) + ", depends on moon sighting" : "Set the date in Settings";
+  const sv = savings(), kl = Math.max(0, compute().left), owe = m.pay;
+  const row = (l, v, cls) => `<div class="${cls||""}"><span>${l}</span><span>${v}</span></div>`;
+  $("khCalc").innerHTML = row("Savings", "PKR " + fmt(sv)) + row("Spending money left this cycle", "PKR " + fmt(kl)) +
+    (m.fx ? row("Foreign cash", "PKR " + fmt(m.fx)) : "") + row("Owed to you (khums not yet paid on it)", "PKR " + fmt(m.recv)) +
+    (owe ? row("Less what you owe", "- PKR " + fmt(owe), "neg") : "") + row("Held now", "PKR " + fmt(m.held), "sum") +
+    (m.hasCarry ? row("Less mukhamas carried in", "- PKR " + fmt(kh.carryPkr), "dim") : "") + row("Surplus above mukhamas", "PKR " + fmt(Math.max(0, m.taxable)), "sum");
   const b = $("khUnpaid");
   b.hidden = !m.unpaid.length;
   b.textContent = m.unpaid.length ? "Unpaid khums: " + m.unpaid.map(y => y.year + " " + fmtC(y.unpaid, y.c)).join(", ") + ". This is listed in the wasiyat as a debt on the whole estate until recorded as paid." : "";
@@ -389,11 +499,12 @@ const qazaTotal = () => { const c = D.wajibat.qaza.counts || {}; return PRAYERS.
 function renderWajibat(){
   const q = D.wajibat.qaza, c = q.counts || {}, kh = khums(), pend = pendingItems();
   const relOpen = pend.filter(i => RELIGIOUS.includes(i.type)).length + kh.unpaid.length;
-  $("wajTiles").innerHTML = tile(nfEn.format(qazaTotal()), "qaza prayers pending") + tile(nfEn.format(+q.roza||0), "qaza fasts pending") +
-    tile(nfEn.format(relOpen), "religious dues open (kaffara, unpaid khums…)", relOpen ? "warn" : "") +
-    tile("<small>PKR</small>" + fmt(kh.est), "khums estimate for " + (kh.kh.label||"this year"), "", "#khums") +
-    tile(nfEn.format(openDebts().filter(d => d.direction !== "owed_to_me").length), "debts I owe", "", "#money") +
-    tile(nfEn.format(openDebts().filter(d => d.direction === "owed_to_me").length), "debts owed to me", "", "#money");
+  const ks = khumsStatus(kh);
+  $("wajTiles").innerHTML = tile("Qaza prayers", nfEn.format(qazaTotal()), "done by " + nice(qazaFinish(1).date) + " at one a prayer", "due") +
+    tile("Qaza fasts", nfEn.format(+q.roza||0), (+q.roza ? "still owed" : "none owed")) +
+    tile("Owed now", relOpen ? nfEn.format(relOpen) : "None", relOpen ? pend.filter(i => RELIGIOUS.includes(i.type)).map(i => (TYPES[i.type]||TYPES.other)[0]).concat(kh.unpaid.map(y => "khums " + y.year)).join(", ") : "nothing pending", relOpen ? "warn" : "ok") +
+    tile("Khums", ks.word, ks.short, ks.cls, "#khums") +
+    tile("Debts", openDebts().filter(d => d.direction !== "owed_to_me").length + " / " + openDebts().filter(d => d.direction === "owed_to_me").length, "I owe / owed to me", "", "#money");
   $("prayers").innerHTML = PRAYERS.map(([k,en,ur]) => { const n = +c[k]||0; return `<div class="prayer"><div class="name">${esc(en)}<span class="ur" lang="ur">${esc(ur)}</span></div>
     <div class="count${n?"":" zero"}">${nfEn.format(n)}</div><div class="acts"><button class="btn ghost" type="button" data-k="${k}" data-d="-1" ${n?"":"disabled"}>✓ Offered</button><button class="btn ghost" type="button" data-k="${k}" data-d="1">+ Missed</button></div></div>`; }).join("");
   $("rozaCount").textContent = nfEn.format(+q.roza||0);
@@ -559,7 +670,13 @@ function wasiyatEn(){
   h += `<div class="stamp">Records as of ${esc(longDate(iso(new Date(m.asOf))))}${p.city?" · "+esc(p.city):""}</div>`;
   return h;
 }
-function renderWasiyat(){ $("leafUr").innerHTML = wasiyatUr(); $("leafEn").innerHTML = wasiyatEn(); }
+function renderWasiyat(){
+  $("leafUr").innerHTML = wasiyatUr(); $("leafEn").innerHTML = wasiyatEn();
+  const ch = wasiyatChecks(), sig = ch[ch.length - 1], miss = ch.filter(x => !x.ok).length, b = $("signedBanner");
+  b.className = "banner" + (miss ? "" : " ok");
+  b.innerHTML = (sig.ok ? "Last signed copy: " + esc(sig.s.replace(/^Signed /, "")) + ". " : "No signed copy recorded yet. Print it and sign with two just Muslim men as witnesses. ") +
+    (miss ? miss + " item" + (miss === 1 ? "" : "s") + " still to complete. <a href=\"#planner\">See the checkup</a>." : "Everything is complete.");
+}
 function leafText(el){
   const c = el.cloneNode(true);
   c.querySelectorAll("bdi[dir=ltr]").forEach(b => b.textContent = "⁦" + b.textContent + "⁩");
@@ -570,11 +687,12 @@ function leafText(el){
 
 /* ================= events ================= */
 // tabs
-const VIEWS = ["today","money","khums","wajibat","wasiyat","settings"];
+const VIEWS = ["today","planner","money","khums","wajibat","wasiyat","settings"];
 function route(){
   let v = location.hash.slice(1); if (!VIEWS.includes(v)) v = conn.token ? "today" : "settings";
   VIEWS.forEach(x => $("v-" + x).hidden = x !== v);
   document.querySelectorAll("#tabs a").forEach(a => a.setAttribute("aria-current", a.getAttribute("href") === "#" + v ? "page" : "false"));
+  document.querySelectorAll("[data-bn]").forEach(a => a.classList.toggle("on", a.dataset.bn === v));
   if (v === "settings") fillSettings();
 }
 window.addEventListener("hashchange", () => { route(); window.scrollTo(0, 0); });
@@ -601,10 +719,20 @@ $("addForm").addEventListener("submit", e => {
     meal: $("fCat").value === "Food" ? (meal || "other") : "", source: $("fSrc").value,
     note: [vendor, $("fNote").value.trim(), del ? "incl. delivery " + del : ""].filter(Boolean).join(": ").slice(0, 140), createdAt: new Date().toISOString()};
   change(d => { d.finance.txns.unshift(doc); }, "Log PKR " + fmt(doc.pkr) + " " + doc.category);
-  $("addToast").textContent = "Added PKR " + fmt(doc.pkr); setTimeout(() => $("addToast").textContent = "", 2600);
+  toast("Added PKR " + fmt(doc.pkr)); closeSheet();
   $("fAmount").value = ""; $("fNote").value = ""; $("fDel").value = "0"; renderCapHint();
 });
 
+/* add-spending sheet */
+function openSheet(){ if (!D) { toast("Not connected yet. Open Settings to connect."); return; } $("sheet").hidden = false; $("fDate").value = todayIso(); setTimeout(() => $("fAmount").focus(), 50); }
+function closeSheet(){ $("sheet").hidden = true; }
+$("sheetClose").onclick = closeSheet;
+$("sheet").addEventListener("click", e => { if (e.target === $("sheet")) closeSheet(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("sheet").hidden) closeSheet(); });
+["qPace","plExtra","plPer","plQ"].forEach(id => $(id).addEventListener("input", () => { if (D) { renderToday(); renderPlanner(); } }));
+$("afford").addEventListener("input", renderAfford);
+$("plSavePer").onclick = () => { const v = +$("plPer").value; change(d => { d.finance.config.wajibatPerCycle = v; }, "Wajibat set-aside"); toast("PKR " + fmt(v) + " a pay is now in your budget plan"); };
+$("usualUndo").onclick = () => { if (!lastUsual) return; const id = lastUsual; lastUsual = null; change(d => { d.finance.txns = d.finance.txns.filter(t => t.id !== id); }, "Undo usual"); $("usualToast").hidden = true; };
 document.addEventListener("click", e => {
   const del = e.target.closest("[data-del]");
   if (del){
@@ -622,6 +750,15 @@ document.addEventListener("click", e => {
   const qb = e.target.closest("button[data-k]");
   if (qb){ bump({[qb.dataset.k]: +qb.dataset.d}); return; }
   if (e.target.closest("[data-fullday]")){ bump(Object.fromEntries(DAY.map(k => [k,-1]))); return; }
+  if (e.target.closest("[data-open-add]")) { openSheet(); return; }
+  const us = e.target.closest("[data-usual]");
+  if (us){ const u = USUALS[+us.dataset.usual]; if (!u) return;
+    const t = {id: uid("t"), date: todayIso(), amount: u.amount, currency: "PKR", pkr: u.amount, category: "Food", meal: u.meal === "other" ? "other" : u.meal, source: u.src, note: u.vendor + " (usual)", createdAt: new Date().toISOString()};
+    change(d => { d.finance.txns.unshift(t); }, "Usual: " + u.vendor); lastUsual = t.id;
+    $("usualToastText").textContent = "Logged " + u.vendor + ", PKR " + fmt(u.amount); $("usualToast").hidden = false; clearTimeout(renderAfford._u); renderAfford._u = setTimeout(() => $("usualToast").hidden = true, 8000); return; }
+  const tq = e.target.closest("[data-today-q]");
+  if (tq){ const k = tq.dataset.todayQ; bump({[k]: prayedToday(k) > 0 ? 1 : -1}); return; }
+  if (e.target.closest("[data-signed]")) { const dt = todayIso(); const key = willKey(); change(d => { d.wajibat.profile = {...d.wajibat.profile, signedAt: dt, signedKey: key}; }, "Wasiyat signed"); toast("Recorded: wasiyat signed today"); return; }
   const ed = e.target.closest("[data-edit]"); if (ed){ itemForm(D.wajibat.items.find(i => i.id === ed.dataset.edit)); return; }
   const clr = e.target.closest("[data-clear]");
   if (clr){ const id = clr.dataset.clear; change(d => { const x = d.wajibat.items.find(y => y.id === id); if (x){ x.status = "cleared"; x.updatedAt = new Date().toISOString(); } }, "Obligation cleared"); }
@@ -641,7 +778,6 @@ document.addEventListener("submit", e => {
 });
 
 // qaza
-let qPending = {}, qT = null;
 function bump(ch){
   if (!D) return;
   const c = D.wajibat.qaza.counts, real = {};
