@@ -350,7 +350,7 @@ td.r,th.r{text-align:right}
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:.9rem;z-index:50;max-width:calc(100% - 32px)}
 @media (min-width:761px){.toast{bottom:24px}}
-@media (prefers-reduced-motion:no-preference){.track > i{transition:width .4s ease}.ring circle{transition:stroke-dashoffset .4s ease}}
+@media (prefers-reduced-motion:no-preference){.track > i{transition:width .4s ease}}
 @media print{
   .bar,.bottom-nav,.view:not(#v-wasiyat),#v-wasiyat > .card,#v-wasiyat .page-head,#signedBanner{display:none!important}
   body,.leaf{background:#fff;color:#111;border:0}

@@ -185,10 +185,23 @@ function renderAll(){
   renderToday(); renderPlanner(); renderMoney(); renderKhums(); renderWajibat(); renderWasiyat(); renderSettingsChip();
 }
 const tile = (label, val, sub, cls, href) => `<${href?'a href="'+href+'"':'div'} class="tile ${cls||""}"><span>${label}</span><b class="${String(val).length > 9 && !/^<small/.test(val) ? "word" : ""}">${val}</b><span>${sub||""}</span></${href?"a":"div"}>`;
-const ringSvg = (frac, color, size, track, inner) => {
-  const C0 = 326.7, off = (C0 * (1 - Math.max(0, Math.min(1, frac)))).toFixed(1);
-  return `<div class="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 120 120" role="img" aria-label="${Math.round(frac*100)} percent"><circle cx="60" cy="60" r="52" fill="none" stroke="${track}" stroke-width="11"/><circle cx="60" cy="60" r="52" fill="none" stroke="${color}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${C0}" stroke-dashoffset="${off}" transform="rotate(-90 60 60)"/></svg><div class="lbl">${inner}</div></div>`;
+/* progress ring: gradient arc with a glowing head that races from its last value to the new one */
+const RING_LAST = {};
+const ringSvg = (frac, color, size, track, inner, key, color2) => {
+  const C0 = 326.7, f = Math.max(0, Math.min(1, frac)), off = C0 * (1 - f);
+  const prev = key in RING_LAST ? RING_LAST[key] : 0; RING_LAST[key || "_"] = f;
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches || Math.abs(prev - f) < 0.001;
+  const id = "rg" + (key || "x"), deg = f * 360 - 90, from = prev * 360 - 90, start = color2 || color;
+  const anim = still ? "" : `<animate attributeName="stroke-dashoffset" from="${(C0 * (1 - prev)).toFixed(1)}" to="${off.toFixed(1)}" begin="indefinite" dur="1.1s" calcMode="spline" keySplines="0.22 1 0.36 1" keyTimes="0;1" fill="freeze"/>`;
+  const spin = still ? "" : `<animateTransform attributeName="transform" type="rotate" from="${from} 60 60" to="${deg} 60 60" begin="indefinite" dur="1.1s" calcMode="spline" keySplines="0.22 1 0.36 1" keyTimes="0;1" fill="freeze"/>`;
+  const head = f > 0.01 ? `<g transform="rotate(${deg} 60 60)">${spin}<circle cx="112" cy="60" r="9" fill="${color}" opacity=".35"/><circle cx="112" cy="60" r="5.5" fill="#fff"/></g>` : "";
+  return `<div class="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 120 120" role="img" aria-label="${Math.round(f*100)} percent">` +
+    `<defs><linearGradient id="${id}" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="${start}"/><stop offset="1" stop-color="${color}"/></linearGradient></defs>` +
+    `<circle cx="60" cy="60" r="52" fill="none" stroke="${track}" stroke-width="11"/>` +
+    `<circle cx="60" cy="60" r="52" fill="none" stroke="url(#${id})" stroke-width="11" stroke-linecap="round" stroke-dasharray="${C0}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 60 60)">${anim}</circle>${head}</svg><div class="lbl">${inner}</div></div>`;
 };
+/* start every ring animation inside an element on the same frame, so the head and the arc stay together */
+function raceRings(el){ requestAnimationFrame(() => el.querySelectorAll("animate,animateTransform").forEach(a => { try { a.beginElement(); } catch(e) {} })); }
 const PICON = {
   fajr: '<path d="M3 17h1m16 0h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7m-9.7 5.7a4 4 0 0 1 8 0"/><path d="M3 21l18 0"/><path d="M12 9v-6l3 3m-6 0l3 -3"/>',
   zohar: '<path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/>',
@@ -247,10 +260,11 @@ function renderToday(){
   $("todayDate").textContent = now.toLocaleDateString("en-GB", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
   $("todayCycle").textContent = "Cycle day " + Math.min(k.len, dayDiff(cfg.cycle.start, todayIso()) + 1) + " of " + k.len + " · pay " + nice(cfg.cycle.nextPay);
   const rc = rem >= k.allowToday * 0.25 ? "#5ccbe6" : rem >= 0 ? "#fbbf24" : "#f87171";
-  $("todayHero").innerHTML = ringSvg(frac, rc, 148, "rgba(255,255,255,.12)", `<small>today</small>${Math.max(0, Math.round(frac*100))}%`) +
+  $("todayHero").innerHTML = ringSvg(frac, rc, 148, "rgba(255,255,255,.12)", `<small>today</small>${Math.max(0, Math.round(frac*100))}%`, "today", rem >= k.allowToday * 0.25 ? "#b4d65c" : rem >= 0 ? "#f0956a" : "#e08ae3") +
     `<div class="hero-copy"><span class="eyebrow">Safe to spend today</span><b class="big">PKR ${fmt(Math.max(0, rem))}</b>` +
     `<span class="soft">PKR ${fmt(k.left)} left for the cycle · PKR ${fmt(k.spentToday)} spent today</span>` +
     `<span class="chip-status ${rem >= 0 ? "ok" : "bad"}" style="${rem >= 0 ? "" : "background:rgba(248,113,113,.2);color:#fca5a5"}">${rem >= 0 ? "On track" : "PKR " + fmt(-rem) + " over today"}</span></div>`;
+  raceRings($("todayHero"));
   const third = pendingItems().filter(i => RELIGIOUS.includes(i.type));
   const kaf = third.reduce((s,i) => s + toPkr(itemStatus(i).left || 0, i.currency), 0);
   const nextBill = myBills().map(b => ({b, d: billDue(b)})).sort((a,b) => a.d.localeCompare(b.d))[0];
@@ -361,14 +375,16 @@ function renderPlanner(){
   $("plKafOpen").textContent = open ? "PKR " + fmt(open) + " open" : "Nothing open";
   const per = +$("plPer").value || 6000, n = open ? Math.ceil(open / per) : 0;
   $("plPerVal").textContent = "PKR " + fmt(per);
-  $("plKafRing").innerHTML = ringSvg(open ? Math.min(1, per / open) : 1, "#d97706", 120, "var(--line)", `${n}<small>${n === 1 ? "pay" : "pays"}</small>`);
+  $("plKafRing").innerHTML = ringSvg(open ? Math.min(1, per / open) : 1, "#b5522c", 120, "var(--line)", `${n}<small>${n === 1 ? "pay" : "pays"}</small>`, "kaf", "#e0a03a");
+  raceRings($("plKafRing"));
   $("plClear").textContent = n ? longDate(addDays(C().cycle.nextPay, 28 * (n - 1))) : "already clear";
   const c = D.wajibat.qaza.counts || {}, q = +$("plQ").value || 1, mx = Math.max(1, ...DAY.map(k => +c[k]||0));
   $("plQazaOwed").textContent = nfEn.format(qazaTotal()) + " owed"; $("plQVal").textContent = q;
   $("plQBars").innerHTML = PRAYERS.slice(0, 5).map(([k,en]) => { const v = +c[k]||0; return `<div class="b"><b>${esc(en)}</b><div><i style="width:${v / mx * 100}%"></i></div><span>${v ? nice(addDays(todayIso(), Math.ceil(v / q))) : "done"}</span></div>`; }).join("");
   $("plQAll").textContent = longDate(qazaFinish(q).date);
   const ch = wasiyatChecks(), okN = ch.filter(x => x.ok).length;
-  $("plWRing").innerHTML = ringSvg(okN / ch.length, "#0d9488", 96, "var(--line)", Math.round(okN / ch.length * 100) + "%");
+  $("plWRing").innerHTML = ringSvg(okN / ch.length, "#146c86", 96, "var(--line)", Math.round(okN / ch.length * 100) + "%", "will", "#5a7d17");
+  raceRings($("plWRing"));
   $("plWMissing").textContent = okN === ch.length ? "Ready. Print and sign again after big changes." : (ch.length - okN) + " thing" + (ch.length - okN === 1 ? "" : "s") + " left before it is ready to sign.";
   $("plChecks").innerHTML = ch.map(x => `<div class="check${x.ok ? "" : " miss"}"><span class="box">${x.ok ? '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px;stroke-width:3"><path d="M5 12l5 5l10 -10"/></svg>' : ""}</span><span class="tx"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></span>${x.sign ? '<button class="btn small ghost" type="button" data-signed>Signed today</button>' : x.ok ? "" : '<a class="btn small ghost" href="' + x.go + '">Fix</a>'}</div>`).join("");
 }
