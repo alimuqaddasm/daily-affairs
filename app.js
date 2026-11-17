@@ -246,7 +246,7 @@ function renderToday(){
   const now = new Date();
   $("todayDate").textContent = now.toLocaleDateString("en-GB", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
   $("todayCycle").textContent = "Cycle day " + Math.min(k.len, dayDiff(cfg.cycle.start, todayIso()) + 1) + " of " + k.len + " · pay " + nice(cfg.cycle.nextPay);
-  const rc = rem >= k.allowToday * 0.25 ? "#2dd4bf" : rem >= 0 ? "#fbbf24" : "#f87171";
+  const rc = rem >= k.allowToday * 0.25 ? "#5ccbe6" : rem >= 0 ? "#fbbf24" : "#f87171";
   $("todayHero").innerHTML = ringSvg(frac, rc, 148, "rgba(255,255,255,.12)", `<small>today</small>${Math.max(0, Math.round(frac*100))}%`) +
     `<div class="hero-copy"><span class="eyebrow">Safe to spend today</span><b class="big">PKR ${fmt(Math.max(0, rem))}</b>` +
     `<span class="soft">PKR ${fmt(k.left)} left for the cycle · PKR ${fmt(k.spentToday)} spent today</span>` +
@@ -259,7 +259,7 @@ function renderToday(){
     tile("Qaza owed", nfEn.format(qazaTotal()), done + " of 5 prayed with today's prayers", "due", "#wajibat") +
     tile("Khums", ks.word, ks.short, ks.cls, "#khums") +
     tile(third.length === 1 ? third[0].type === "kaffara" ? "Kaffara" : "Dues open" : "Dues open", third.length ? "<small>PKR</small>" + fmt(kaf) : "None", third.length ? "still open" : "nothing pending", third.length ? "warn" : "ok", "#money") +
-    (nextBill ? tile("Next bill", esc(nextBill.b.name.replace(/\s*\(.*\)/, "")), fmtC(nextBill.b.amount, nextBill.b.currency) + " · " + nice(nextBill.d), "", "#money") : tile("Bills", "None", ""));
+    (nextBill ? tile("Next bill", esc(nextBill.b.name), fmtC(nextBill.b.amount, nextBill.b.currency) + " · " + nice(nextBill.d), "", "#money") : tile("Bills", "None", ""));
   const qc = D.wajibat.qaza.counts || {};
   const qTile = ([kk,en,ur], small) => {
     const n = +qc[kk] || 0, p = Math.max(0, prayedToday(kk)), base = kk.replace("_q", "");

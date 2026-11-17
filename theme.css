@@ -1,0 +1,285 @@
+/* F: shadcn/ui look. Zinc neutrals, black primary, 1px borders, rounded-2xl cards, Geist type.
+   Layout: white top bar with a segmented tab control; content in one column of bordered cards. */
+:root{
+  --bg:#fafafa; --surface:#ffffff; --sunk:#f4f4f5; --line:#e4e4e7;
+  --fg:#09090b; --muted:#71717a; --navy:#18181b; --navy-2:#27272a;
+  --accent:#18181b; --accent-strong:#27272a; --accent-ink:#fafafa; --accent-soft:#f4f4f5; --accent-soft-ink:#18181b; --teal:#fafafa;
+  --nashta:#c2410c; --dinner:#1d4ed8; --snack:#7e22ce; --food-other:#a1a1aa; --qaza:#18181b;
+  --good:#15803d; --warn:#b45309; --bad:#dc2626; --due:#6d28d9;
+  --good-soft:#dcfce7; --warn-soft:#fef3c7; --bad-soft:#fee2e2; --due-soft:#ede9fe;
+  --display:"Geist",system-ui,sans-serif; --body:"Geist",system-ui,sans-serif; --nums:"Geist",system-ui,sans-serif;
+  --r:16px; --r-sm:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#09090b; --surface:#111113; --sunk:#18181b; --line:#27272a; --fg:#fafafa; --muted:#a1a1aa; --navy:#27272a; --navy-2:#3f3f46;
+  --accent:#fafafa; --accent-strong:#e4e4e7; --accent-ink:#18181b; --accent-soft:#27272a; --accent-soft-ink:#fafafa; --qaza:#fafafa;
+  --nashta:#fb923c; --dinner:#60a5fa; --snack:#c084fc; --food-other:#71717a;
+  --good:#4ade80; --warn:#fbbf24; --bad:#f87171; --due:#c4b5fd;
+  --good-soft:#14532d; --warn-soft:#422006; --bad-soft:#450a0a; --due-soft:#2e1065; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#09090b; --surface:#111113; --sunk:#18181b; --line:#27272a; --fg:#fafafa; --muted:#a1a1aa; --navy:#27272a; --navy-2:#3f3f46;
+  --accent:#fafafa; --accent-strong:#e4e4e7; --accent-ink:#18181b; --accent-soft:#27272a; --accent-soft-ink:#fafafa; --qaza:#fafafa;
+  --nashta:#fb923c; --dinner:#60a5fa; --snack:#c084fc; --food-other:#71717a;
+  --good:#4ade80; --warn:#fbbf24; --bad:#f87171; --due:#c4b5fd;
+  --good-soft:#14532d; --warn-soft:#422006; --bad-soft:#450a0a; --due-soft:#2e1065; color-scheme:dark}
+
+body{font-family:var(--body)}
+h1{font-size:32px;font-weight:700;letter-spacing:-.03em}
+h2{font-size:18px;font-weight:600;letter-spacing:-.01em}
+.num,.big,.mid,.tile b,.ptile .top b,.ring .lbl,.mini3 b,.prayer .count,.amount-big input,.amount-big span{font-family:var(--nums);font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.big{font-size:60px;line-height:1}
+.tile b{font-size:40px}
+.tile b.word{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.eyebrow{text-transform:none;letter-spacing:0;font-size:.86rem;font-weight:500}
+
+/* header: white bar, segmented tabs */
+.bar{background:var(--surface);color:var(--fg);border-bottom:1px solid var(--line)}
+.bar .pattern{display:none}
+.brand b{font-family:var(--body);font-size:17px;font-weight:700;color:var(--fg)}
+.brand .ur{color:var(--muted);border-color:var(--line)}
+.sync{background:var(--sunk);color:var(--muted);border-color:var(--line)}
+.sync[data-state="warn"]{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.add-top{background:var(--accent);color:var(--accent-ink);border-radius:10px;font-weight:500}
+.add-top:hover{background:var(--accent-strong)}
+.tabs{padding-block:0 10px}
+.tabs{gap:2px}
+.tabs a{color:var(--muted);font-weight:500;border-radius:8px;padding:7px 12px}
+.tabs a:hover{color:var(--fg)}
+.tabs a[aria-current="page"]{background:var(--sunk);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line)}
+
+/* surfaces */
+.card{border-radius:var(--r);border:1px solid var(--line);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.hero-dark{background:var(--navy);border-radius:var(--r)}
+.hero-dark .eyebrow{color:#a1a1aa}
+.hero-dark .soft{color:#d4d4d8}
+.hero-dark .chip-status.ok{background:rgba(255,255,255,.12);color:#fafafa}
+.track{background:#3f3f46}.track > i{background:#fafafa}.track > b{background:#a1a1aa}
+.tile{border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.tile span:first-child{text-transform:none;letter-spacing:0;font-size:.86rem;font-weight:500}
+.tile.due b{color:var(--fg)} .tile.ok b{color:var(--good)} .tile.warn b{color:var(--fg)}
+.chip-status,.pill{border-radius:999px;font-weight:600}
+.banner{border-radius:12px}
+.leaf{border-radius:var(--r)}
+
+/* big prayer cards */
+.ptile{border-radius:14px;min-height:170px;border:1px solid var(--line);background:var(--surface)}
+.ptile .ptap{padding:18px 18px 6px;gap:6px}
+.ptile .top{flex-direction:row-reverse;justify-content:flex-end;gap:10px;align-items:flex-start}
+.ptile .top b{font-size:58px;line-height:.95;margin-right:auto}
+.ptile .top .ic{width:20px;height:20px;opacity:.6}
+.ptile .st{padding:0 18px 16px;font-size:13px}
+.ptile.done{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.ptile.small{min-height:0}.ptile.small .top b{font-size:34px}
+
+/* controls */
+.btn{border-radius:10px;font-weight:500}
+.btn.ghost{border-color:var(--line);background:var(--surface)}
+.btn.small{border-radius:8px}
+.btn.qaza{background:var(--accent);color:var(--accent-ink)}
+.chip{border-radius:999px}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+input,select,textarea{border-radius:10px;background:var(--surface)}
+.pill-input{background:var(--surface);border-radius:10px}
+.usual{border-radius:12px;background:var(--surface)}
+.mchip{border-radius:999px;text-transform:none;letter-spacing:0}
+.mp-day{border-radius:12px}
+.mp-day.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.sheet{border-radius:18px}
+.timeline .dot{background:var(--fg)}
+.mini3 > div{background:rgba(255,255,255,.08)}.mini3 .amber{background:#fafafa;color:#18181b}.mini3 .amber span{color:#18181b}
+
+@media (max-width:760px){
+  .bottom-nav{background:var(--surface);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.12);border-radius:16px}
+  .bottom-nav a{color:var(--muted)} .bottom-nav a.on{color:var(--fg);font-weight:700}
+  .fab{background:var(--accent);color:var(--accent-ink);border-radius:12px}
+  .ptile{min-height:140px}.ptile .top b{font-size:46px}.big{font-size:46px}
+}
+
+/* ---------- colour by meaning + typography pass ---------- */
+:root{
+  --violet:#7c3aed; --violet-soft:#f5f3ff; --violet-line:#ddd6fe;
+  --emerald:#059669; --emerald-soft:#ecfdf5; --emerald-line:#a7f3d0;
+  --amber:#d97706; --amber-soft:#fffbeb; --amber-line:#fde68a;
+  --blue:#2563eb; --blue-soft:#eff6ff; --blue-line:#bfdbfe;
+  --rose:#e11d48;
+  --head:"Bricolage Grotesque","Geist",system-ui,sans-serif; --mono:"Geist Mono",ui-monospace,monospace;
+  --qaza:var(--violet);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --violet:#a78bfa; --violet-soft:#1e1533; --violet-line:#3b2a63;
+  --emerald:#34d399; --emerald-soft:#062a20; --emerald-line:#065f46;
+  --amber:#fbbf24; --amber-soft:#2a1d05; --amber-line:#78350f;
+  --blue:#60a5fa; --blue-soft:#0b1a33; --blue-line:#1e3a8a; --qaza:var(--violet)}}
+:root[data-theme="dark"]{
+  --violet:#a78bfa; --violet-soft:#1e1533; --violet-line:#3b2a63;
+  --emerald:#34d399; --emerald-soft:#062a20; --emerald-line:#065f46;
+  --amber:#fbbf24; --amber-soft:#2a1d05; --amber-line:#78350f;
+  --blue:#60a5fa; --blue-soft:#0b1a33; --blue-line:#1e3a8a; --qaza:var(--violet)}
+
+body{font-size:15px;line-height:1.55;font-feature-settings:"ss01","cv11"}
+h1,h2,h3{font-family:var(--head)}
+h1{font-size:44px;font-weight:700;letter-spacing:-.035em;line-height:1.05}
+h2{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.page-head .eyebrow,.eyebrow{font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;font-size:11.5px;font-weight:500;color:var(--muted)}
+.brand b{font-family:var(--head);font-size:19px;letter-spacing:-.02em}
+.tile span:first-child{font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;font-size:11px;display:flex;align-items:center;gap:8px}
+.tile span:first-child::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.tile span:last-child{font-size:13px}
+.big{font-size:64px;letter-spacing:-.05em}
+
+/* tiles take their meaning's colour */
+.tile-grid .tile{border-width:1px}
+.tile.due{background:var(--violet-soft);border-color:var(--violet-line)} .tile.due span:first-child,.tile.due b{color:var(--violet)}
+.tile.ok{background:var(--emerald-soft);border-color:var(--emerald-line)} .tile.ok span:first-child,.tile.ok b{color:var(--emerald)}
+.tile.warn{background:var(--amber-soft);border-color:var(--amber-line)} .tile.warn span:first-child,.tile.warn b{color:var(--amber)}
+.tile-grid .tile:nth-child(4):not(.ok):not(.warn):not(.due){background:var(--blue-soft);border-color:var(--blue-line)}
+.tile-grid .tile:nth-child(4):not(.ok):not(.warn):not(.due) span:first-child{color:var(--blue)}
+
+/* hero: ink card, green ring and a blue accent line */
+.hero-dark{background:#09090b;position:relative;overflow:hidden}
+.hero-dark::after{content:"";position:absolute;inset:auto 0 0 0;height:4px;background:linear-gradient(90deg,var(--emerald),var(--blue),var(--violet))}
+.hero-dark .chip-status.ok{background:rgba(52,211,153,.16);color:#6ee7b7}
+.hero-dark .eyebrow{color:#a1a1aa}
+
+/* prayer cards in violet */
+.ptile{border-color:var(--violet-line)}
+.ptile .top b{color:var(--violet)}
+.ptile .top .ic{color:var(--violet);opacity:.9}
+.ptile .nm b{font-family:var(--head);font-size:17px}
+.ptile.done{background:var(--violet);border-color:var(--violet);color:#fff}
+.ptile.done .top b,.ptile.done .top .ic{color:#fff}
+.ptile:hover{border-color:var(--violet)}
+.qaza-range{accent-color:var(--violet)}
+
+/* section headings get a small coloured marker */
+#v-today .card-head h2::before,#v-money .card-head h2::before,#v-planner .card-head h2::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:10px;vertical-align:1px;background:var(--blue)}
+#mealCard .card-head h2::before{background:var(--amber)}
+#v-today section:has(#qazaToday) .card-head h2::before{background:var(--violet)}
+#v-planner #plKhums h2::before{background:var(--emerald)}
+
+/* meal plan, usuals, timeline in colour */
+.mchip.nashta{background:var(--amber-soft);color:var(--amber);border:1px solid var(--amber-line)}
+.mchip.dinner{background:var(--blue-soft);color:var(--blue);border:1px solid var(--blue-line)}
+.mchip.snack{background:var(--violet-soft);color:var(--violet);border:1px solid var(--violet-line)}
+.mp-day.sel{background:var(--amber);border-color:var(--amber);color:#fff}
+.mp-day.sel .dn{color:#fff}
+.mp-day .dots i.done{background:var(--emerald);border-color:var(--emerald)}
+.usual:hover{border-color:var(--blue)}
+.usual b{font-family:var(--head);font-size:15px}
+.timeline .dot{background:var(--blue)} .timeline .dot.bill{background:var(--violet)} .timeline .dot.kh{border-color:var(--emerald)}
+.timeline .body b{font-family:var(--head);font-weight:600}
+.chip-status.ok{background:var(--emerald-soft);color:var(--emerald)}
+.chip-status.warn{background:var(--amber-soft);color:var(--amber)}
+.chip-status.due{background:var(--violet-soft);color:var(--violet)}
+.add-top{background:var(--fg)} .tabs a[aria-current="page"]{color:var(--fg);font-weight:600}
+.btn{font-weight:600}
+.btn:not(.ghost):not(.qaza){background:var(--fg);color:var(--bg)}
+.btn.qaza{background:var(--violet);color:#fff}
+.leaf .clause{font-family:var(--head)}
+:root{--hero:#09090b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--hero:#1c1c20}}
+:root[data-theme="dark"]{--hero:#1c1c20}
+.hero-dark{background:var(--hero);box-shadow:inset 0 0 0 1px var(--line)}
+
+/* ---------- more colour, more variety ---------- */
+:root{
+  --c-fajr:#ea580c; --c-zohar:#ca8a04; --c-asr:#0284c7; --c-maghrib:#e11d48; --c-esha:#4f46e5;
+  --c-teal:#0d9488; --c-pink:#db2777; --c-sky:#0284c7; --c-indigo:#4f46e5; --c-rose:#e11d48; --c-orange:#ea580c; --c-lime:#65a30d;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --c-fajr:#fb923c; --c-zohar:#facc15; --c-asr:#38bdf8; --c-maghrib:#fb7185; --c-esha:#818cf8;
+  --c-teal:#2dd4bf; --c-pink:#f472b6; --c-sky:#38bdf8; --c-indigo:#818cf8; --c-rose:#fb7185; --c-orange:#fb923c; --c-lime:#a3e635}}
+:root[data-theme="dark"]{
+  --c-fajr:#fb923c; --c-zohar:#facc15; --c-asr:#38bdf8; --c-maghrib:#fb7185; --c-esha:#818cf8;
+  --c-teal:#2dd4bf; --c-pink:#f472b6; --c-sky:#38bdf8; --c-indigo:#818cf8; --c-rose:#fb7185; --c-orange:#fb923c; --c-lime:#a3e635}
+
+/* each section has its own colour: tab, heading markers, title underline */
+#v-learn{--sec:var(--c-orange)} #v-today{--sec:var(--c-teal)} #v-planner{--sec:var(--violet)} #v-money{--sec:var(--blue)}
+#v-khums{--sec:var(--emerald)} #v-wajibat{--sec:var(--c-rose)} #v-wasiyat{--sec:var(--c-sky)} #v-settings{--sec:var(--muted)}
+.page-head h1{position:relative;padding-bottom:10px}
+.page-head h1::after{content:"";position:absolute;left:0;bottom:0;width:56px;height:5px;border-radius:3px;background:var(--sec)}
+.view .card-head h2::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:10px;vertical-align:1px;background:var(--sec)}
+.tabs a[href="#learn"]{--t:var(--c-orange)} .tabs a[href="#today"]{--t:var(--c-teal)} .tabs a[href="#planner"]{--t:var(--violet)} .tabs a[href="#money"]{--t:var(--blue)}
+.tabs a[href="#khums"]{--t:var(--emerald)} .tabs a[href="#wajibat"]{--t:var(--c-rose)} .tabs a[href="#wasiyat"]{--t:var(--c-sky)} .tabs a[href="#settings"]{--t:var(--muted)}
+.tabs a[aria-current="page"]{background:color-mix(in srgb,var(--t) 14%,var(--surface));color:var(--t);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--t) 35%,transparent)}
+.tabs a:hover{color:var(--t)}
+
+/* prayers take the colour of their time of day */
+.ptile,.prayer{--pc:var(--violet)}
+#qazaToday > .ptile:nth-child(1),.prayers > .prayer:nth-child(1){--pc:var(--c-fajr)}
+#qazaToday > .ptile:nth-child(2),.prayers > .prayer:nth-child(2){--pc:var(--c-zohar)}
+#qazaToday > .ptile:nth-child(3),.prayers > .prayer:nth-child(3){--pc:var(--c-asr)}
+#qazaToday > .ptile:nth-child(4),.prayers > .prayer:nth-child(4){--pc:var(--c-maghrib)}
+#qazaToday > .ptile:nth-child(5),.prayers > .prayer:nth-child(5){--pc:var(--c-esha)}
+.qasr-row .ptile:nth-of-type(1),.prayers > .prayer:nth-child(6){--pc:var(--c-zohar)}
+.qasr-row .ptile:nth-of-type(2),.prayers > .prayer:nth-child(7){--pc:var(--c-asr)}
+.qasr-row .ptile:nth-of-type(3),.prayers > .prayer:nth-child(8){--pc:var(--c-esha)}
+.ptile{background:color-mix(in srgb,var(--pc) 7%,var(--surface));border-color:color-mix(in srgb,var(--pc) 30%,transparent)}
+.ptile .top b,.ptile .top .ic{color:var(--pc)}
+.ptile:hover{border-color:var(--pc)}
+.ptile.done{background:var(--pc);border-color:var(--pc);color:#fff}
+.ptile.done .top b,.ptile.done .top .ic{color:#fff}
+.prayer{background:color-mix(in srgb,var(--pc) 7%,var(--surface));border-color:color-mix(in srgb,var(--pc) 30%,transparent)}
+.prayer .count{color:var(--pc)}
+
+/* food by meal type */
+.usual:has(.mchip.nashta){background:color-mix(in srgb,var(--amber) 9%,var(--surface));border-color:color-mix(in srgb,var(--amber) 35%,transparent)}
+.usual:has(.mchip.dinner){background:color-mix(in srgb,var(--blue) 8%,var(--surface));border-color:color-mix(in srgb,var(--blue) 30%,transparent)}
+.usual:has(.mchip.snack){background:color-mix(in srgb,var(--c-pink) 8%,var(--surface));border-color:color-mix(in srgb,var(--c-pink) 30%,transparent)}
+.mchip.snack{background:color-mix(in srgb,var(--c-pink) 12%,var(--surface));color:var(--c-pink);border-color:color-mix(in srgb,var(--c-pink) 35%,transparent)}
+.mp-slot:has(.mchip.nashta){background:color-mix(in srgb,var(--amber) 7%,var(--surface));border-color:color-mix(in srgb,var(--amber) 30%,transparent)}
+.mp-slot:has(.mchip.dinner){background:color-mix(in srgb,var(--blue) 6%,var(--surface));border-color:color-mix(in srgb,var(--blue) 28%,transparent)}
+.meals .meal:nth-child(1){background:color-mix(in srgb,var(--amber) 8%,var(--surface))}
+.meals .meal:nth-child(2){background:color-mix(in srgb,var(--blue) 7%,var(--surface))}
+.meals .meal:nth-child(3){background:color-mix(in srgb,var(--c-pink) 7%,var(--surface))}
+:root{--nashta:var(--amber);--dinner:var(--blue);--snack:var(--c-pink)}
+
+/* timeline and money hero */
+.timeline li:nth-child(5n+1) .dot{background:var(--c-teal)} .timeline li:nth-child(5n+2) .dot{background:var(--c-indigo)}
+.timeline li:nth-child(5n+3) .dot{background:var(--c-pink)} .timeline li:nth-child(5n+4) .dot{background:var(--c-orange)}
+.timeline li:nth-child(5n) .dot{background:var(--c-sky)} .timeline .dot.kh{background:transparent!important;border-color:var(--emerald)}
+.hero-dark.stats > div:nth-child(1) .eyebrow{color:#6ee7b7} .hero-dark.stats > div:nth-child(2) .eyebrow{color:#93c5fd}
+.hero-dark.stats > div:nth-child(3) .eyebrow{color:#fcd34d} .hero-dark.stats > div:nth-child(4) .eyebrow{color:#c4b5fd}
+
+/* learn steps, planners and checks */
+.step:nth-child(7n+1){--s:var(--c-orange)} .step:nth-child(7n+2){--s:var(--c-teal)} .step:nth-child(7n+3){--s:var(--amber)} .step:nth-child(7n+4){--s:var(--blue)}
+.step:nth-child(7n+5){--s:var(--emerald)} .step:nth-child(7n+6){--s:var(--violet)} .step:nth-child(7n){--s:var(--c-sky)}
+.step .no{background:color-mix(in srgb,var(--s) 14%,var(--surface));color:var(--s)} .step.done .no{background:var(--s);color:#fff} .step.done{border-color:var(--s)}
+.bars .b > div i{background:var(--c-fajr)} .bars .b:nth-child(2) > div i{background:var(--c-zohar)} .bars .b:nth-child(3) > div i{background:var(--c-asr)}
+.bars .b:nth-child(4) > div i{background:var(--c-maghrib)} .bars .b:nth-child(5) > div i{background:var(--c-esha)}
+.link-card:nth-child(1){background:color-mix(in srgb,var(--emerald) 7%,var(--surface))} .link-card:nth-child(2){background:color-mix(in srgb,var(--blue) 7%,var(--surface))}
+.link-card:nth-child(3){background:color-mix(in srgb,var(--amber) 8%,var(--surface))} .link-card:nth-child(4){background:color-mix(in srgb,var(--violet) 7%,var(--surface))}
+.check .box{background:var(--emerald)}
+
+/* ---------- replace the four stock hues with less ordinary ones ---------- */
+:root{
+  --violet:#8a2c8e;  /* plum: qaza */
+  --emerald:#5a7d17; /* olive: khums */
+  --amber:#b5522c;   /* terracotta: kaffara and dues */
+  --blue:#146c86;    /* petrol: bills and money */
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --violet:#e08ae3; --emerald:#b4d65c; --amber:#f0956a; --blue:#5ccbe6}}
+:root[data-theme="dark"]{--violet:#e08ae3; --emerald:#b4d65c; --amber:#f0956a; --blue:#5ccbe6}
+:root{
+  --violet-soft:color-mix(in srgb,var(--violet) 8%,var(--surface)); --violet-line:color-mix(in srgb,var(--violet) 30%,transparent);
+  --emerald-soft:color-mix(in srgb,var(--emerald) 9%,var(--surface)); --emerald-line:color-mix(in srgb,var(--emerald) 32%,transparent);
+  --amber-soft:color-mix(in srgb,var(--amber) 8%,var(--surface)); --amber-line:color-mix(in srgb,var(--amber) 30%,transparent);
+  --blue-soft:color-mix(in srgb,var(--blue) 8%,var(--surface)); --blue-line:color-mix(in srgb,var(--blue) 30%,transparent);
+  --good:var(--emerald); --good-soft:var(--emerald-soft); --warn:var(--amber); --warn-soft:var(--amber-soft); --due:var(--violet); --due-soft:var(--violet-soft);
+}
+.hero-dark .chip-status.ok{background:rgba(180,214,92,.18);color:#c9e48a}
+.hero-dark.stats > div:nth-child(1) .eyebrow{color:#c9e48a} .hero-dark.stats > div:nth-child(2) .eyebrow{color:#8fdcef}
+.hero-dark.stats > div:nth-child(3) .eyebrow{color:#f6b391} .hero-dark.stats > div:nth-child(4) .eyebrow{color:#ebaaee}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --violet-soft:color-mix(in srgb,var(--violet) 13%,var(--surface)); --violet-line:color-mix(in srgb,var(--violet) 35%,transparent);
+  --emerald-soft:color-mix(in srgb,var(--emerald) 12%,var(--surface)); --emerald-line:color-mix(in srgb,var(--emerald) 35%,transparent);
+  --amber-soft:color-mix(in srgb,var(--amber) 12%,var(--surface)); --amber-line:color-mix(in srgb,var(--amber) 35%,transparent);
+  --blue-soft:color-mix(in srgb,var(--blue) 12%,var(--surface)); --blue-line:color-mix(in srgb,var(--blue) 35%,transparent);
+  --good:var(--emerald); --good-soft:var(--emerald-soft); --warn:var(--amber); --warn-soft:var(--amber-soft); --due:var(--violet); --due-soft:var(--violet-soft)}}
+:root[data-theme="dark"]{
+  --violet-soft:color-mix(in srgb,var(--violet) 13%,var(--surface)); --violet-line:color-mix(in srgb,var(--violet) 35%,transparent);
+  --emerald-soft:color-mix(in srgb,var(--emerald) 12%,var(--surface)); --emerald-line:color-mix(in srgb,var(--emerald) 35%,transparent);
+  --amber-soft:color-mix(in srgb,var(--amber) 12%,var(--surface)); --amber-line:color-mix(in srgb,var(--amber) 35%,transparent);
+  --blue-soft:color-mix(in srgb,var(--blue) 12%,var(--surface)); --blue-line:color-mix(in srgb,var(--blue) 35%,transparent);
+  --good:var(--emerald); --good-soft:var(--emerald-soft); --warn:var(--amber); --warn-soft:var(--amber-soft); --due:var(--violet); --due-soft:var(--violet-soft)}
