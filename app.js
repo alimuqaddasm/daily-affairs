@@ -272,12 +272,56 @@ function renderToday(){
   $("qPaceVal").textContent = per; $("qPaceDate").textContent = longDate(fin.date);
   USUALS = usuals();
   $("usuals").innerHTML = USUALS.length ? USUALS.map((u, i) => `<button type="button" class="usual" data-usual="${i}"><span class="mchip ${u.meal}">${u.meal === "other" ? "Food" : MEALS[u.meal]}</span><b>${esc(u.vendor)}</b><span class="muted">PKR ${fmt(u.amount)} · ${u.n} orders</span></button>`).join("") : '<div class="empty">Usuals appear once you have ordered from a place twice.</div>';
-  renderAfford();
+  renderAfford(); renderMealPlan();
   const tl = [];
   tl.push({d: cfg.cycle.nextPay, cls: "", t: nice(cfg.cycle.nextPay) + " · Pay day", s: "PKR " + fmt(cfg.payAmount)});
   F().bills.forEach(b => { const d = billDue(b); if (dayDiff(todayIso(), d) <= 35) tl.push({d, cls: b.paidBy === "mentor" ? "" : "bill", t: nice(d) + " · " + b.name, s: b.paidBy === "mentor" ? "Paid by your mentor: send him a reminder" : fmtC(b.amount, b.currency) + ", about PKR " + fmt(toPkr(b.amount, b.currency))}); });
   if (kh.kh.next) tl.push({d: kh.kh.next, cls: "kh", t: nice(kh.kh.next) + " · 23 Ramadan", s: "Khums " + (kh.kh.label||"") + " becomes payable, about PKR " + fmt(kh.est)});
   $("timeline").innerHTML = tl.sort((a,b) => a.d.localeCompare(b.d)).map(x => `<li><span class="rail"><span class="dot ${x.cls}"></span><i></i></span><div class="body"><b>${esc(x.t)}</b><div>${esc(x.s)}</div></div></li>`).join("");
+}
+/* ================= meal plan ================= */
+let mpDay = null;
+function mpEaten(date, slot){
+  const tx = F().txns.filter(t => t.date === date && t.category === "Food");
+  return tx.find(t => t.plan === date + "|" + slot) || tx.find(t => !t.plan && t.meal === slot) || null;
+}
+function renderMealPlan(){
+  const mp = F().mealPlan, card = $("mealCard");
+  if (!mp || !(mp.days||[]).length) { card.hidden = true; return; }
+  card.hidden = false;
+  const t = todayIso(), days = mp.days;
+  if (!mpDay || !days.some(d => d.date === mpDay)) mpDay = days.some(d => d.date === t) ? t : days[0].date;
+  let planned = 0, eatenPlan = 0, eatenActual = 0, leftPlan = 0;
+  const state = days.map(d => {
+    const r = {date: d.date};
+    ["nashta","dinner"].forEach(sl => {
+      const p = d[sl]; if (!p) { r[sl] = "none"; return; }
+      planned += p.price; const e = mpEaten(d.date, sl);
+      if (e) { eatenPlan += p.price; eatenActual += e.pkr; r[sl] = e.pkr > p.price * 1.1 ? "over" : "done"; }
+      else { if (d.date >= t) leftPlan += p.price; r[sl] = d.date < t ? "missed" : "open"; }
+    });
+    return r;
+  });
+  $("mpTitle").textContent = mp.title || "";
+  const k = compute(), fits = k.left >= leftPlan;
+  const chip = $("mpChip"); chip.className = "chip-status " + (fits ? "ok" : "warn");
+  chip.textContent = fits ? "Plan fits: PKR " + fmt(k.left - leftPlan) + " spare" : "Plan is PKR " + fmt(leftPlan - k.left) + " more than you have";
+  $("mpDays").innerHTML = state.map(r => {
+    const dd = parse(r.date), sel = r.date === mpDay;
+    return `<button type="button" class="mp-day${sel ? " sel" : ""}${r.date === t ? " today" : ""}" data-mp-day="${r.date}" aria-pressed="${sel}"><span class="dn">${dd.toLocaleDateString("en-GB",{weekday:"short"})}</span><b>${dd.getDate()}</b><span class="dots"><i class="${r.nashta}" title="Nashta"></i><i class="${r.dinner}" title="Dinner"></i></span></button>`;
+  }).join("");
+  const day = days.find(d => d.date === mpDay);
+  $("mpSlots").innerHTML = ["nashta","dinner"].map(sl => {
+    const p = day[sl]; if (!p) return "";
+    const e = mpEaten(day.date, sl), past = day.date < t;
+    const price = (p.est ? "about " : "") + "PKR " + fmt(p.price);
+    const meta = [p.source, p.delivery ? "incl. " + p.delivery + " delivery" : "", p.tip || ""].filter(Boolean).join(" · ");
+    const act = e ? `<span class="chip-status ${e.pkr > p.price * 1.1 ? "warn" : "ok"}">Logged PKR ${fmt(e.pkr)}</span>` :
+      `<button type="button" class="btn small" data-mp-log="${day.date}|${sl}">${past ? "Log it" : "Ordered"}, PKR ${fmt(p.price)}</button><button type="button" class="btn small ghost" data-open-add>Had something else</button>`;
+    return `<div class="mp-slot"><span class="mchip ${sl}">${MEALS[sl]}</span><div class="mp-what"><b>${esc(p.vendor)}</b><span>${esc(p.item)}</span><span class="muted sm">${esc(price)}${meta ? " · " + esc(meta) : ""}</span></div><div class="mp-act">${act}</div></div>`;
+  }).join("");
+  $("mpSum").innerHTML = `Planned <b class="num">PKR ${fmt(planned)}</b> · eaten so far <b class="num">PKR ${fmt(eatenActual)}</b> against PKR ${fmt(eatenPlan)} planned · still to come <b class="num">PKR ${fmt(leftPlan)}</b>`;
+  $("mpNote").textContent = mp.note || "";
 }
 function renderAfford(){
   if (!D) return;
@@ -815,6 +859,11 @@ document.addEventListener("click", e => {
     const t = {id: uid("t"), date: todayIso(), amount: u.amount, currency: "PKR", pkr: u.amount, category: "Food", meal: u.meal === "other" ? "other" : u.meal, source: u.src, note: u.vendor + " (usual)", createdAt: new Date().toISOString()};
     change(d => { d.finance.txns.unshift(t); }, "Usual: " + u.vendor); lastUsual = t.id;
     $("usualToastText").textContent = "Logged " + u.vendor + ", PKR " + fmt(u.amount); $("usualToast").hidden = false; clearTimeout(renderAfford._u); renderAfford._u = setTimeout(() => $("usualToast").hidden = true, 8000); return; }
+  const md = e.target.closest("[data-mp-day]"); if (md) { mpDay = md.dataset.mpDay; renderMealPlan(); return; }
+  const ml = e.target.closest("[data-mp-log]");
+  if (ml){ const [date, sl] = ml.dataset.mpLog.split("|"), day = (F().mealPlan.days||[]).find(d => d.date === date), p = day && day[sl]; if (!p) return;
+    const tx = {id: uid("t"), date, amount: p.price, currency: "PKR", pkr: p.price, deliveryFee: p.delivery || 0, category: "Food", meal: sl, source: p.source || "Cash", note: (p.vendor + ": " + p.item).slice(0, 140), plan: date + "|" + sl, createdAt: new Date().toISOString()};
+    change(d => { d.finance.txns.unshift(tx); }, "Meal plan: " + p.vendor); toast("Logged " + p.vendor + ", PKR " + fmt(p.price)); return; }
   const tq = e.target.closest("[data-today-q]");
   if (tq){ bump({[tq.dataset.todayQ]: -1}); return; }
   const tu = e.target.closest("[data-today-undo]");
