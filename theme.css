@@ -324,3 +324,5 @@ h2{font-size:20px;font-weight:700;letter-spacing:-.02em}
   :root:not([data-theme="light"]) .ptile.done{background:linear-gradient(150deg,color-mix(in srgb,var(--pc) 75%,#000),color-mix(in srgb,var(--pc) 45%,#000))}}
 :root[data-theme="dark"] .mp-day.sel{background:linear-gradient(140deg,color-mix(in srgb,var(--amber) 65%,#000),color-mix(in srgb,var(--violet) 60%,#000))}
 :root[data-theme="dark"] .ptile.done{background:linear-gradient(150deg,color-mix(in srgb,var(--pc) 75%,#000),color-mix(in srgb,var(--pc) 45%,#000))}
+/* selected day: gradient starts at the outer edge (no seam under the border), no clipped shadow */
+.mp-day.sel{background-origin:border-box;border-color:transparent;box-shadow:none}
