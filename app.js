@@ -332,8 +332,13 @@ function renderMealPlan(){
     const e = mpEaten(day.date, sl), past = day.date < t;
     const price = (p.est ? "about " : "") + "PKR " + fmt(p.price);
     const metaArr = [p.source, p.delivery ? "incl. " + p.delivery + " delivery" : "", p.tip || ""].filter(Boolean);
-    const act = e ? `<span class="chip-status ${e.pkr > p.price * 1.1 ? "warn" : "ok"}">Logged PKR ${fmt(e.pkr)}</span>${rateBtn(e)}` :
-      `<button type="button" class="btn small" data-mp-log="${day.date}|${sl}">${past ? "Log it" : "Ordered"}, PKR ${fmt(p.price)}</button><button type="button" class="btn small ghost" data-open-add>Had something else</button>`;
+    const act = e ? `<span class="chip-status ${e.pkr > p.price * 1.1 ? "warn" : "ok"}">Logged${e.plan === day.date + "|" + sl ? "" : ", PKR " + fmt(e.pkr - p.price >= 0 ? e.pkr - p.price : p.price - e.pkr) + (e.pkr >= p.price ? " over" : " under") + " plan"}${e.plan === day.date + "|" + sl ? " PKR " + fmt(e.pkr) : ""}</span>${rateBtn(e)}` :
+      `<button type="button" class="btn small" data-mp-log="${day.date}|${sl}">${past ? "Log it" : "Ordered"}, PKR ${fmt(p.price)}</button><button type="button" class="btn small ghost" data-mp-other="${day.date}|${sl}">Had something else</button>`;
+    if (e && e.plan !== day.date + "|" + sl) {
+      /* ordered something other than the plan: show what was actually eaten */
+      const dish = dishesOf(e).join(", ");
+      return `<div class="mp-slot swapped"><span class="mchip ${sl}">${MEALS[sl]}</span><div class="mp-what"><b>${esc(placeOf(e) || "Something else")}</b>${dish ? `<span>${esc(dish)}</span>` : ""}${tags([["PKR " + fmt(e.pkr), "money"], esc(e.source || ""), ["Planned <s>" + esc(p.vendor) + "</s>", "plan-was"]])}</div><div class="mp-act">${act}</div></div>`;
+    }
     return `<div class="mp-slot"><span class="mchip ${sl}">${MEALS[sl]}</span><div class="mp-what"><b>${esc(p.vendor)}</b><span>${esc(p.item)}</span>${tags([[esc(price), "money"], ...metaArr.map(esc)])}</div><div class="mp-act">${act}</div></div>`;
   }).join("");
   $("mpSum").innerHTML = tags([`Planned <b class="num">PKR ${fmt(planned)}</b>`, [`Eaten <b class="num">PKR ${fmt(eatenActual)}</b> of ${fmt(eatenPlan)} planned`, eatenActual > eatenPlan * 1.05 ? "warn" : "good"], `Still to come <b class="num">PKR ${fmt(leftPlan)}</b>`]);
@@ -859,6 +864,8 @@ $("plSavePer").onclick = () => { const v = +$("plPer").value; change(d => { d.fi
 $("usualUndo").onclick = () => { if (!lastUsual) return; const id = lastUsual; lastUsual = null; change(d => { d.finance.txns = d.finance.txns.filter(t => t.id !== id); }, "Undo usual"); $("usualToast").hidden = true; };
 document.addEventListener("click", e => {
   const rtx = e.target.closest("[data-rate-tx]"); if (rtx) { openRate(rtx.dataset.rateTx); return; }
+  const mpo = e.target.closest("[data-mp-other]");
+  if (mpo) { const [dt, sl] = mpo.dataset.mpOther.split("|"); openSheet(); if (!$("sheet").hidden) { $("fDate").value = dt; $(`mealChips`).querySelector(`[data-meal="${sl}"]`)?.click(); } return; }
   const del = e.target.closest("[data-del]");
   if (del){
     if (del.dataset.armed !== "1"){ del.dataset.armed = "1"; del.textContent = "Delete?"; setTimeout(() => { del.dataset.armed = ""; del.textContent = "✕"; }, 3000); return; }

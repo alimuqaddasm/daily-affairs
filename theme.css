@@ -394,3 +394,6 @@ td.r,th.r{white-space:nowrap}
 .rate-chip:hover,.rate-chip:focus-visible{background:var(--sunk);outline:none}
 .rate-cell{margin-top:4px}
 .mp-act{flex-wrap:wrap;gap:6px;align-items:center}
+/* meal plan slot where something else was eaten */
+.tags .tag.plan-was{opacity:.8;font-weight:500}.tags .tag.plan-was s{text-decoration-color:color-mix(in srgb,var(--fg) 45%,transparent)}
+.mp-slot.swapped{border-style:solid}
