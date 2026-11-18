@@ -812,7 +812,7 @@ function menuBook(){
   const book = {};
   F().txns.forEach(t => {
     if (t.category !== "Food" || !t.note) return;
-    const i = t.note.indexOf(":"); if (i < 0) return;
+    const i0 = t.note.indexOf(":"), i = i0 < 0 ? t.note.length : i0;
     const place = t.note.slice(0, i).replace(/\s*\(WhatsApp\)\s*$/i, "").replace(/\s*\(usual\)\s*$/i, "").trim();
     if (!place || place.length > 50) return;
     let rest = t.note.slice(i + 1).split(/\. (Food|total|paid|late|inDrive|website|guests|lunch)/)[0];
@@ -829,7 +829,8 @@ function fillPlaces(){
 }
 function onPlace(){
   const book = menuBook(), e = book[$("fPlace").value.trim()], h = $("placeHint");
-  if (!e) { $("dishList").innerHTML = ""; h.innerHTML = ""; return; }
+  if ($("fPlace").value.trim().length > 1 && !meal && $("fCat").value !== "Food") $("fCat").value = "Food";
+  if (!e) { $("dishList").innerHTML = ""; h.innerHTML = $("fPlace").value.trim().length > 1 ? '<span class="tags"><span class="tag good">New place</span><span class="tag">Saved for next time once you add it</span></span>' : ""; return; }
   const items = Object.entries(e.items).sort((a,b) => b[1] - a[1]);
   $("dishList").innerHTML = items.map(([k]) => `<option value="${esc(k)}"></option>`).join("");
   const xs = [...e.xs].sort((a,b) => a-b), med = Math.round(xs[Math.floor(xs.length/2)]);
