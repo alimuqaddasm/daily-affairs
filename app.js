@@ -287,7 +287,7 @@ function renderToday(){
   const per = +$("qPace").value || 1, fin = qazaFinish(per);
   $("qPaceVal").textContent = per; $("qPaceDate").textContent = longDate(fin.date);
   USUALS = usuals();
-  $("usuals").innerHTML = USUALS.length ? USUALS.map((u, i) => `<button type="button" class="usual" data-usual="${i}"><span class="mchip ${u.meal}">${u.meal === "other" ? "Food" : MEALS[u.meal]}</span><b>${esc(u.vendor)}</b>${tags(["PKR " + fmt(u.amount), u.n + " orders"])}</button>`).join("") : '<div class="empty">Usuals appear once you have ordered from a place twice.</div>';
+  $("usuals").innerHTML = USUALS.length ? USUALS.map((u, i) => `<button type="button" class="usual" data-usual="${i}"><span class="mchip ${u.meal}">${u.meal === "other" ? "Food" : MEALS[u.meal]}</span><b>${esc(u.vendor)}</b>${(() => { const rv = placeReviews(u.vendor), lr = rv.rows.find(t => t.rating); return tags(["PKR " + fmt(u.amount), u.n + " orders", lr ? [RATE[lr.rating][0], RATE[lr.rating][2]] : ""]); })()}</button>`).join("") : '<div class="empty">Usuals appear once you have ordered from a place twice.</div>';
   renderAfford(); renderMealPlan();
   const tl = [];
   tl.push({d: cfg.cycle.nextPay, cls: "", t: "Pay day", s: [["PKR " + fmt(cfg.payAmount), "good"]]});
@@ -332,7 +332,7 @@ function renderMealPlan(){
     const e = mpEaten(day.date, sl), past = day.date < t;
     const price = (p.est ? "about " : "") + "PKR " + fmt(p.price);
     const metaArr = [p.source, p.delivery ? "incl. " + p.delivery + " delivery" : "", p.tip || ""].filter(Boolean);
-    const act = e ? `<span class="chip-status ${e.pkr > p.price * 1.1 ? "warn" : "ok"}">Logged PKR ${fmt(e.pkr)}</span>` :
+    const act = e ? `<span class="chip-status ${e.pkr > p.price * 1.1 ? "warn" : "ok"}">Logged PKR ${fmt(e.pkr)}</span>${rateBtn(e)}` :
       `<button type="button" class="btn small" data-mp-log="${day.date}|${sl}">${past ? "Log it" : "Ordered"}, PKR ${fmt(p.price)}</button><button type="button" class="btn small ghost" data-open-add>Had something else</button>`;
     return `<div class="mp-slot"><span class="mchip ${sl}">${MEALS[sl]}</span><div class="mp-what"><b>${esc(p.vendor)}</b><span>${esc(p.item)}</span>${tags([[esc(price), "money"], ...metaArr.map(esc)])}</div><div class="mp-act">${act}</div></div>`;
   }).join("");
@@ -524,12 +524,13 @@ function renderTx(k){
   $("txCount").textContent = rows.length + " entr" + (rows.length===1?"y":"ies");
   if (!rows.length){ $("txWrap").innerHTML = '<div class="empty">Nothing logged in this cycle yet. Add a spend on the Today tab.</div>'; return; }
   $("txWrap").innerHTML = '<table><thead><tr><th>Date</th><th>What</th><th>Category</th><th>Paid by</th><th class="r">Amount</th><th class="r">PKR</th><th><span style="position:absolute;left:-9999px">Delete</span></th></tr></thead><tbody>' +
-    rows.map(t => '<tr><td>'+nice(t.date)+'</td><td>'+(t.meal && MEALS[t.meal] ? '<span class="tag"><i style="background:'+MEAL_COLOR[t.meal]+'"></i>'+MEALS[t.meal]+'</span> ' : '')+esc(t.note||"")+'</td>' +
+    rows.map(t => '<tr><td>'+nice(t.date)+'</td><td>'+(t.meal && MEALS[t.meal] ? '<span class="tag"><i style="background:'+MEAL_COLOR[t.meal]+'"></i>'+MEALS[t.meal]+'</span> ' : '')+esc(t.note||"")+rateCell(t)+'</td>' +
       '<td><span class="tag"><i style="background:'+(CAT_COLOR[t.category]||"var(--food-other)")+'"></i>'+esc(t.category)+'</span></td><td class="muted">'+esc(t.source||"")+'</td>' +
       '<td class="r num">'+(t.currency==="PKR"?"":fmtC(t.amount,t.currency))+'</td><td class="r num">'+fmt(t.pkr)+'</td>' +
       '<td class="r"><button class="x" data-del="'+esc(t.id)+'" aria-label="Delete entry">✕</button></td></tr>').join("") + '</tbody></table>';
 }
 function renderCapHint(){
+  if ($("rateBox")) $("rateBox").hidden = $("fCat").value !== "Food";
   const el = $("capHint"), amt = +$("fAmount").value, cur = $("fCur").value;
   if (!D) return;
   if (!amt){ el.textContent = meal ? "Cap for " + MEALS[meal] + ": PKR " + fmt(C().caps?.[meal]||0) : ""; el.className = "hint"; return; }
@@ -803,9 +804,10 @@ $("addForm").addEventListener("submit", e => {
     pkr: Math.round((toPkr(amount, currency) + del)*100)/100, deliveryFee: del, category: $("fCat").value,
     meal: $("fCat").value === "Food" ? (meal || "other") : "", source: $("fSrc").value,
     note: [$("fPlace").value.trim() || vendor, $("fNote").value.trim(), del ? "incl. delivery " + del : ""].filter(Boolean).join(": ").slice(0, 140), createdAt: new Date().toISOString()};
+  if (doc.category === "Food") { const rv = $("fReview").value.trim(); if (rateSel) doc.rating = rateSel; if (rv) doc.review = rv; }
   change(d => { d.finance.txns.unshift(doc); }, "Log PKR " + fmt(doc.pkr) + " " + doc.category);
   toast("Added PKR " + fmt(doc.pkr)); closeSheet();
-  $("fAmount").value = ""; $("fNote").value = ""; $("fPlace").value = ""; $("fDel").value = "0"; $("placeHint").innerHTML = ""; renderCapHint();
+  setRate("rateChips", ""); $("fReview").value = ""; $("fAmount").value = ""; $("fNote").value = ""; $("fPlace").value = ""; $("fDel").value = "0"; $("placeHint").innerHTML = ""; renderCapHint();
 });
 /* places and dishes learned from past entries ("Place: 1x Dish, 2x Dish") */
 function menuBook(){
@@ -829,13 +831,14 @@ function fillPlaces(){
 }
 function onPlace(){
   const book = menuBook(), e = book[$("fPlace").value.trim()], h = $("placeHint");
-  if ($("fPlace").value.trim().length > 1 && !meal && $("fCat").value !== "Food") $("fCat").value = "Food";
+  if ($("fPlace").value.trim().length > 1 && !meal && $("fCat").value !== "Food") { $("fCat").value = "Food"; renderCapHint(); }
   if (!e) { $("dishList").innerHTML = ""; h.innerHTML = $("fPlace").value.trim().length > 1 ? '<span class="tags"><span class="tag good">New place</span><span class="tag">Saved for next time once you add it</span></span>' : ""; return; }
   const items = Object.entries(e.items).sort((a,b) => b[1] - a[1]);
   $("dishList").innerHTML = items.map(([k]) => `<option value="${esc(k)}"></option>`).join("");
   const xs = [...e.xs].sort((a,b) => a-b), med = Math.round(xs[Math.floor(xs.length/2)]);
+  const rv = placeReviews($("fPlace").value.trim());
   h.innerHTML = `<span class="muted sm">Usually PKR ${fmt(med)} here.</span> <button type="button" class="btn small ghost" data-fill-amt="${med}">Use PKR ${fmt(med)}</button>` +
-    items.slice(0, 6).map(([k]) => ` <button type="button" class="chip dish" data-dish="${esc(k)}">${esc(k)}</button>`).join("");
+    items.slice(0, 6).map(([k]) => { const r = rv.dish[k]; return ` <button type="button" class="chip dish${r ? " r-" + r : ""}" data-dish="${esc(k)}">${r ? `<span class="rmark">${RATE[r][1]}</span>` : ""}${esc(k)}</button>`; }).join("") + reviewHtml(rv);
   if (!meal && $("fCat").value !== "Food") { $("fCat").value = "Food"; }
 }
 $("fPlace").addEventListener("input", onPlace); $("fPlace").addEventListener("change", onPlace);
@@ -845,7 +848,7 @@ $("placeHint").addEventListener("click", e => {
 });
 
 /* add-spending sheet */
-function openSheet(){ if (!D) { toast("Not connected yet. Open Settings to connect."); return; } fillPlaces(); $("sheet").hidden = false; $("fDate").value = todayIso(); setTimeout(() => $("fAmount").focus(), 50); }
+function openSheet(){ if (!D) { toast("Not connected yet. Open Settings to connect."); return; } fillPlaces(); $("sheet").hidden = false; $("fDate").value = todayIso(); renderCapHint(); setTimeout(() => $("fAmount").focus(), 50); }
 function closeSheet(){ $("sheet").hidden = true; }
 $("sheetClose").onclick = closeSheet;
 $("sheet").addEventListener("click", e => { if (e.target === $("sheet")) closeSheet(); });
@@ -855,6 +858,7 @@ $("afford").addEventListener("input", renderAfford);
 $("plSavePer").onclick = () => { const v = +$("plPer").value; change(d => { d.finance.config.wajibatPerCycle = v; }, "Wajibat set-aside"); toast("PKR " + fmt(v) + " a pay is now in your budget plan"); };
 $("usualUndo").onclick = () => { if (!lastUsual) return; const id = lastUsual; lastUsual = null; change(d => { d.finance.txns = d.finance.txns.filter(t => t.id !== id); }, "Undo usual"); $("usualToast").hidden = true; };
 document.addEventListener("click", e => {
+  const rtx = e.target.closest("[data-rate-tx]"); if (rtx) { openRate(rtx.dataset.rateTx); return; }
   const del = e.target.closest("[data-del]");
   if (del){
     if (del.dataset.armed !== "1"){ del.dataset.armed = "1"; del.textContent = "Delete?"; setTimeout(() => { del.dataset.armed = ""; del.textContent = "✕"; }, 3000); return; }
@@ -1023,4 +1027,45 @@ $("fCur").innerHTML = curOptions("PKR"); $("kCur").innerHTML = curOptions("PKR")
 $("fCat").innerHTML = CATS.map(c => '<option>'+c+'</option>').join(""); $("fCat").value = "Other";
 $("fDate").value = todayIso(); $("kDate").value = todayIso();
 route(); setSync(); pull(false);
+
+/* ================= how was it: ratings on food ================= */
+const RATE = {love: ["Loved it", "♥", "good"], ok: ["It was fine", "~", ""], no: ["Not again", "✕", "bad"]};
+let rateSel = "", rateTx = null, rateSel2 = "";
+function setRate(group, v){ document.querySelectorAll("#" + group + " [data-rate]").forEach(b => b.setAttribute("aria-pressed", b.dataset.rate === v && v ? "true" : "false")); if (group === "rateChips") rateSel = v; else rateSel2 = v; }
+["rateChips", "rateChips2"].forEach(g => $(g).addEventListener("click", e => { const b = e.target.closest("[data-rate]"); if (!b) return; const cur = g === "rateChips" ? rateSel : rateSel2; setRate(g, cur === b.dataset.rate ? "" : b.dataset.rate); }));
+function placeOf(t){ const i = (t.note||"").indexOf(":"); return (i < 0 ? t.note||"" : t.note.slice(0, i)).replace(/\s*\((WhatsApp|usual)\)\s*$/i, "").trim(); }
+function dishesOf(t){ const i = (t.note||"").indexOf(":"); return i < 0 ? [] : t.note.slice(i + 1).split(/,\s*/).map(x => x.replace(/^\s*\d+x\s*/i, "").replace(/\s+/g, " ").trim()).filter(x => x && !/^incl\./.test(x)); }
+function placeReviews(place){
+  const rows = F().txns.filter(t => t.category === "Food" && (t.rating || t.review) && placeOf(t) === place).sort((a,b) => (b.date + (b.createdAt||"")).localeCompare(a.date + (a.createdAt||"")));
+  const n = {love: 0, ok: 0, no: 0}, dish = {};
+  rows.forEach(t => { if (t.rating) { n[t.rating]++; dishesOf(t).forEach(d => { if (!dish[d]) dish[d] = t.rating; }); } });
+  return {rows, n, dish};
+}
+function reviewHtml(rv){
+  if (!rv.rows.length) return "";
+  const last = rv.rows.find(t => t.review);
+  return `<div class="past-reviews">${tags(Object.keys(RATE).filter(k => rv.n[k]).map(k => [RATE[k][0] + " " + rv.n[k] + "x", RATE[k][2]]))}` +
+    (last ? `<div class="sm"><span class="muted">Last note, ${esc(nice(last.date))}:</span> "${esc(last.review)}"</div>` : "") + `</div>`;
+}
+function rateTag(t){ return t.rating ? `<span class="tag ${RATE[t.rating][2]}">${RATE[t.rating][0]}</span>` : ""; }
+function rateBtn(t){
+  return t.rating || t.review ? `<button type="button" class="rate-chip" data-rate-tx="${esc(t.id)}" title="Change">${t.rating ? `<span class="tags">${rateTag(t)}</span>` : ""}${t.review ? `<span class="muted sm">"${esc(t.review)}"</span>` : ""}</button>`
+    : `<button type="button" class="btn small ghost" data-rate-tx="${esc(t.id)}">How was it?</button>`;
+}
+function rateCell(t){ return t.category === "Food" ? `<div class="rate-cell">${rateBtn(t)}</div>` : ""; }
+function openRate(id){
+  const t = F().txns.find(x => x.id === id); if (!t) return;
+  rateTx = id; $("rateWhat").textContent = (t.note || "Food") + ", " + nice(t.date) + ", PKR " + fmt(t.pkr);
+  setRate("rateChips2", t.rating || ""); $("rReview").value = t.review || ""; $("rateSheet").hidden = false;
+}
+function closeRate(){ $("rateSheet").hidden = true; rateTx = null; }
+$("rateClose").onclick = closeRate;
+$("rateSheet").addEventListener("click", e => { if (e.target === $("rateSheet")) closeRate(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("rateSheet").hidden) closeRate(); });
+$("mealRateForm").addEventListener("submit", e => {
+  e.preventDefault(); const id = rateTx, r = rateSel2, rv = $("rReview").value.trim(); if (!id) return;
+  change(d => { const t = d.finance.txns.find(x => x.id === id); if (!t) return; if (r) t.rating = r; else delete t.rating; if (rv) t.review = rv; else delete t.review; }, "Rate a meal");
+  toast(r ? RATE[r][0] + ", saved" : "Saved"); closeRate();
+});
+$("fCat").addEventListener("change", () => { $("rateBox").hidden = $("fCat").value !== "Food"; });
 })();

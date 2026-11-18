@@ -376,3 +376,21 @@ td.r,th.r{white-space:nowrap}
 @media (max-width:520px){.tile-grid .tile b{font-size:clamp(20px,6.4vw,26px)}.tile-grid .tile b.word{font-size:19px}.tile-grid .tile{padding:14px}}
 /* Urdu title beside an English one: gap and divider on the physical left (the Urdu span itself runs right to left) */
 .item .t .ur{display:inline-block;margin:0 0 0 12px;padding:0 0 0 12px;border:0;border-left:1px solid var(--line)}
+
+/* ---------- how was it ---------- */
+.rate-box{border:1px solid var(--line);border-radius:14px;padding:12px 14px 14px;margin:0;display:grid;gap:10px;min-width:0}
+.rate-box legend{font-weight:600;font-size:14px;padding:0 6px}
+.rate-box legend .muted{font-weight:400;font-size:12px}
+.rate-box input,#rReview{width:100%}
+.chip.rate.love[aria-pressed="true"]{background:var(--emerald);border-color:var(--emerald);color:#fff}
+.chip.rate.ok[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip.rate.no[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
+.chip.dish.r-love{border-color:var(--emerald-line);background:var(--emerald-soft)}
+.chip.dish.r-no{border-color:color-mix(in srgb,var(--bad) 35%,transparent);background:var(--bad-soft);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--bad) 60%,transparent)}
+.chip.dish .rmark{font-weight:800;margin-right:2px}
+.chip.dish.r-love .rmark{color:var(--emerald)} .chip.dish.r-no .rmark{color:var(--bad)} .chip.dish.r-ok .rmark{color:var(--blue)}
+.past-reviews{flex-basis:100%;display:grid;gap:4px;margin-top:6px}
+.rate-chip{all:unset;cursor:pointer;display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;border-radius:10px;padding:2px 4px;margin-left:-4px}
+.rate-chip:hover,.rate-chip:focus-visible{background:var(--sunk);outline:none}
+.rate-cell{margin-top:4px}
+.mp-act{flex-wrap:wrap;gap:6px;align-items:center}

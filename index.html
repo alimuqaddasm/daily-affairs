@@ -8,8 +8,8 @@
 <title>Daily Affairs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@500&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Noto+Nastaliq+Urdu:wght@400;600&family=Amiri:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
-<link rel="stylesheet" href="app.css?v=202611180342">
-<link rel="stylesheet" href="theme.css?v=202611180342">
+<link rel="stylesheet" href="app.css?v=202611180409">
+<link rel="stylesheet" href="theme.css?v=202611180409">
 </head>
 <body>
 <header class="bar">
@@ -334,8 +334,33 @@
     </div>
     <datalist id="placeList"></datalist><datalist id="dishList"></datalist>
     <div class="place-hint" id="placeHint"></div>
+    <fieldset class="rate-box" id="rateBox">
+      <legend>How was it? <span class="muted">(optional, add it later if you have not eaten yet)</span></legend>
+      <div class="chips" id="rateChips" role="group" aria-label="How was it">
+      <button type="button" class="chip rate love" data-rate="love" aria-pressed="false">Loved it</button>
+      <button type="button" class="chip rate ok" data-rate="ok" aria-pressed="false">It was fine</button>
+      <button type="button" class="chip rate no" data-rate="no" aria-pressed="false">Not again</button>
+      </div>
+      <input id="fReview" type="text" maxlength="160" placeholder="Comment, e.g. naan was cold, karahi spot on">
+    </fieldset>
     <div class="hint" id="capHint" aria-live="polite"></div>
     <button class="btn big-btn" id="addBtn" type="submit">Save</button>
+  </form>
+</div>
+
+<!-- rate a meal afterwards -->
+<div class="sheet-back" id="rateSheet" hidden>
+  <form class="sheet" id="mealRateForm" autocomplete="off" aria-labelledby="rateH">
+    <div class="grab" aria-hidden="true"></div>
+    <div class="card-head"><h2 id="rateH">How was it?</h2><button class="btn ghost small" type="button" id="rateClose">Cancel</button></div>
+    <div class="muted sm" id="rateWhat"></div>
+    <div class="chips" id="rateChips2" role="group" aria-label="How was it">
+      <button type="button" class="chip rate love" data-rate="love" aria-pressed="false">Loved it</button>
+      <button type="button" class="chip rate ok" data-rate="ok" aria-pressed="false">It was fine</button>
+      <button type="button" class="chip rate no" data-rate="no" aria-pressed="false">Not again</button>
+    </div>
+    <input id="rReview" type="text" maxlength="160" placeholder="Comment, e.g. too oily, order the large next time">
+    <button class="btn big-btn" type="submit">Save</button>
   </form>
 </div>
 
@@ -345,6 +370,6 @@
   <a href="#wajibat" data-bn="wajibat">Wajibat</a><a href="#planner" data-bn="planner">Plan</a>
 </nav>
 <div class="toast" id="toast" hidden></div>
-<script src="app.js?v=202611180342" defer></script>
+<script src="app.js?v=202611180409" defer></script>
 </body>
 </html>
