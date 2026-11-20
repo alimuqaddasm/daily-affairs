@@ -397,3 +397,37 @@ td.r,th.r{white-space:nowrap}
 /* meal plan slot where something else was eaten */
 .tags .tag.plan-was{opacity:.8;font-weight:500}.tags .tag.plan-was s{text-decoration-color:color-mix(in srgb,var(--fg) 45%,transparent)}
 .mp-slot.swapped{border-style:solid}
+
+/* ---------- accounts tab ---------- */
+#v-accounts{--sec:var(--c-indigo)} .tabs a[href="#accounts"]{--t:var(--c-indigo)}
+.ac-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.ac-card{border-radius:var(--r);padding:20px;display:grid;gap:8px;border:1px solid var(--line);
+  background:linear-gradient(145deg,color-mix(in srgb,var(--c-indigo) 14%,var(--surface)),color-mix(in srgb,var(--c-indigo) 3%,var(--surface)))}
+.ac-card.bank{background:linear-gradient(145deg,color-mix(in srgb,var(--emerald) 14%,var(--surface)),color-mix(in srgb,var(--emerald) 3%,var(--surface)))}
+.ac-card .eyebrow{color:var(--c-indigo)} .ac-card.bank .eyebrow{color:var(--emerald)}
+.ac-card .mid{font-size:30px}
+.ac-filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.ac-filters input[type=search]{flex:1 1 240px;max-width:360px}
+.ac-cats{gap:6px}
+.ac-cats .chip{min-height:30px;padding:4px 11px;font-size:.8rem}
+.ac-stack{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:14px 0 12px;background:var(--sunk)}
+.ac-stack i{display:block;height:100%}
+.ac-sum-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px}
+@media (max-width:720px){.ac-sum-grid{grid-template-columns:1fr}}
+.ac-top{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.ac-top li{display:flex;justify-content:space-between;gap:12px;font-size:.88rem;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.ac-day{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:16px 0 6px;border-bottom:1px solid var(--line)}
+.ac-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.ac-dot{width:10px;height:10px;border-radius:3px;margin-top:6px}
+.ac-main{display:grid;gap:5px;min-width:0}
+.ac-main > b{font-weight:700}
+.ac-note{font-size:.84rem;color:var(--muted)}
+.ac-order{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.86rem}
+.ac-order .tag{display:inline-flex;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--emerald-soft);color:var(--emerald);border:1px solid var(--emerald-line)}
+.ac-amt{text-align:right;display:grid;gap:2px;white-space:nowrap}
+.ac-amt b{font-size:1.05rem}
+.ac-row.in .ac-amt b{color:var(--emerald)}
+.ac-amt small{color:var(--muted);font-size:11px}
+#acMissing li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center}
+@media (max-width:520px){#acMissing li{grid-template-columns:minmax(0,1fr) auto}#acMissing li .btn{grid-column:1/-1;justify-self:start}}
+.ac-sum-grid .plan-list{align-content:start}

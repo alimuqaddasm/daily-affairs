@@ -59,6 +59,7 @@ try { Object.assign(conn, JSON.parse(localStorage.getItem(LS)) || {}); } catch(e
 const saveConn = () => { try { localStorage.setItem(LS, JSON.stringify(conn)); } catch(e) {} };
 
 const API = "https://api.github.com";
+let ST = null, stLoading = false, stErr = "", acAcct = "all", acCat = "", stmtPending = null;
 let base = null, D = null, sha = null, etag = null, pending = [], lastSync = null, syncErr = "", flushT = null, flushing = false;
 
 const fileUrl = () => API + "/repos/" + encodeURIComponent(conn.owner) + "/" + encodeURIComponent(conn.repo) + "/contents/" + conn.path.split("/").map(encodeURIComponent).join("/");
@@ -182,7 +183,7 @@ function khums(){
 /* ================= rendering: shared ================= */
 function renderAll(){
   if (!D) return;
-  renderToday(); renderPlanner(); renderMoney(); renderKhums(); renderWajibat(); renderWasiyat(); renderSettingsChip();
+  renderToday(); renderPlanner(); renderMoney(); renderKhums(); renderWajibat(); renderWasiyat(); renderSettingsChip(); if (ST) renderAccounts();
 }
 /* tags: short facts as chips. Items are HTML strings or [html, tone] */
 const tags = items => '<span class="tags">' + items.filter(Boolean).map(x => Array.isArray(x) ? `<span class="tag ${x[1]||""}">${x[0]}</span>` : `<span class="tag">${x}</span>`).join("") + "</span>";
@@ -778,13 +779,14 @@ function leafText(el){
 
 /* ================= events ================= */
 // tabs
-const VIEWS = ["today","planner","money","khums","wajibat","wasiyat","settings"];
+const VIEWS = ["today","planner","money","accounts","khums","wajibat","wasiyat","settings"];
 function route(){
   let v = location.hash.slice(1); if (!VIEWS.includes(v)) v = conn.token ? "today" : "settings";
   VIEWS.forEach(x => $("v-" + x).hidden = x !== v);
   document.querySelectorAll("#tabs a").forEach(a => a.setAttribute("aria-current", a.getAttribute("href") === "#" + v ? "page" : "false"));
   document.querySelectorAll("[data-bn]").forEach(a => a.classList.toggle("on", a.dataset.bn === v));
   if (v === "settings") fillSettings();
+  if (v === "accounts") openAccounts();
 }
 window.addEventListener("hashchange", () => { route(); window.scrollTo(0, 0); });
 
@@ -809,6 +811,7 @@ $("addForm").addEventListener("submit", e => {
     pkr: Math.round((toPkr(amount, currency) + del)*100)/100, deliveryFee: del, category: $("fCat").value,
     meal: $("fCat").value === "Food" ? (meal || "other") : "", source: $("fSrc").value,
     note: [$("fPlace").value.trim() || vendor, $("fNote").value.trim(), del ? "incl. delivery " + del : ""].filter(Boolean).join(": ").slice(0, 140), createdAt: new Date().toISOString()};
+  if (stmtPending) { doc.stmtId = stmtPending; stmtPending = null; }
   if (doc.category === "Food") { const rv = $("fReview").value.trim(); if (rateSel) doc.rating = rateSel; if (rv) doc.review = rv; }
   change(d => { d.finance.txns.unshift(doc); }, "Log PKR " + fmt(doc.pkr) + " " + doc.category);
   toast("Added PKR " + fmt(doc.pkr)); closeSheet();
@@ -854,7 +857,7 @@ $("placeHint").addEventListener("click", e => {
 
 /* add-spending sheet */
 function openSheet(){ if (!D) { toast("Not connected yet. Open Settings to connect."); return; } fillPlaces(); $("sheet").hidden = false; $("fDate").value = todayIso(); renderCapHint(); setTimeout(() => $("fAmount").focus(), 50); }
-function closeSheet(){ $("sheet").hidden = true; }
+function closeSheet(){ $("sheet").hidden = true; stmtPending = null; }
 $("sheetClose").onclick = closeSheet;
 $("sheet").addEventListener("click", e => { if (e.target === $("sheet")) closeSheet(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("sheet").hidden) closeSheet(); });
@@ -1075,4 +1078,97 @@ $("mealRateForm").addEventListener("submit", e => {
   toast(r ? RATE[r][0] + ", saved" : "Saved"); closeRate();
 });
 $("fCat").addEventListener("change", () => { $("rateBox").hidden = $("fCat").value !== "Food"; });
+
+/* ================= accounts: statements ================= */
+const AC_CAT = {"Food":"var(--amber)","Transfers out":"var(--c-indigo)","Money in":"var(--emerald)","Own accounts":"var(--muted)","Subscriptions":"var(--blue)","Fees":"var(--bad)","Transport":"var(--c-sky)","Profit":"var(--emerald)","Travel":"var(--c-pink)","Shopping":"var(--c-orange)","Bills":"var(--violet)","Refunds":"var(--c-teal)","Phone":"var(--c-rose)"};
+async function loadStatementsRemote(){
+  const path = conn.path.replace(/[^/]*$/, "statements.json"), q = conn.branch ? "?ref=" + encodeURIComponent(conn.branch) : "";
+  const url = API + "/repos/" + encodeURIComponent(conn.owner) + "/" + encodeURIComponent(conn.repo) + "/contents/" + path.split("/").map(encodeURIComponent).join("/") + q;
+  const r = await fetch(url, {headers: hdr({Accept: "application/vnd.github.raw+json"}), cache: "no-store"});
+  if (!r.ok) throw httpErr(r);
+  return JSON.parse(await r.text());
+}
+async function openAccounts(){
+  if (ST || stLoading) { if (ST) renderAccounts(); return; }
+  if (!conn.token) { $("acCards").innerHTML = '<div class="empty">Connect in Settings to see your statements.</div>'; return; }
+  stLoading = true;
+  try { ST = await loadStatementsRemote(); stErr = ""; if (!$("acMonth").value) fillAcMonths(); renderAccounts(); }
+  catch (e) { stErr = e.message; $("acCards").innerHTML = '<div class="empty">Could not load the statements: ' + esc(e.message) + '</div>'; }
+  stLoading = false;
+}
+function fillAcMonths(){
+  const ms = [...new Set(ST.rows.map(r => r.date.slice(0, 7)))].sort().reverse();
+  $("acMonth").innerHTML = ms.map(m => `<option value="${m}">${new Date(m + "-01T12:00").toLocaleDateString("en-GB", {month: "long", year: "numeric"})}</option>`).join("");
+}
+const fmt2 = v => { const a = Math.abs(v); return (a % 1 ? a.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2}) : fmt(a)); };
+function stLinks(){
+  const byId = {}, byStmt = {};
+  F().txns.forEach(t => { byId[t.id] = t; if (t.stmtId) byStmt[t.stmtId] = t; });
+  return r => byStmt[r.id] || (r.txId && byId[r.txId]) || null;
+}
+function renderAccounts(){
+  if (!ST || !D) return;
+  const link = stLinks(), A = ST.accounts;
+  $("acStamp").innerHTML = tags([["Updated " + nice(ST.generated), "date"]]);
+  $("acCards").innerHTML = Object.entries(A).map(([k, a]) => {
+    const rows = ST.rows.filter(r => r.acct === k);
+    return `<div class="ac-card ${k}"><span class="eyebrow">${esc(a.title)}</span><b class="mid"><small>PKR</small>${fmt2(a.balance)}</b>` +
+      tags([["As of " + nice(a.asOf.slice(0, 10)), "date"], esc(a.holder), rows.length + " transactions since " + nice(a.from)]) + `</div>`;
+  }).join("");
+  /* not in the app yet: this cycle's spends on the statement with no matching entry */
+  const cyc = C().cycle, miss = ST.rows.filter(r => r.amount < 0 && r.date >= cyc.start && r.cat !== "Own accounts" && r.cat !== "Fees" && !link(r));
+  $("acMissingCard").hidden = !miss.length;
+  $("acMissing").innerHTML = miss.map(r => `<li><div><div style="font-weight:700">${esc(r.party)}</div>${tags([[nice(r.date) + ", " + r.ts.slice(11), "date"], esc(r.via), [esc(r.cat), ""]])}</div>` +
+    `<span class="mid" style="font-size:1.05rem">PKR ${fmt2(r.amount)}</span><button type="button" class="btn small" data-ac-log="${esc(r.id)}">Log it</button></li>`).join("");
+  /* month summary */
+  const m = $("acMonth").value, mr = ST.rows.filter(r => r.date.slice(0, 7) === m && (acAcct === "all" || r.acct === acAcct));
+  const ext = mr.filter(r => r.cat !== "Own accounts"), inn = ext.filter(r => r.amount > 0).reduce((s, r) => s + r.amount, 0), out = -ext.filter(r => r.amount < 0).reduce((s, r) => s + r.amount, 0);
+  const byCat = {}; ext.filter(r => r.amount < 0).forEach(r => byCat[r.cat] = (byCat[r.cat] || 0) - r.amount);
+  const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  const byParty = {}; ext.filter(r => r.amount < 0).forEach(r => { const k = r.party === "Foodpanda" ? "Foodpanda" : r.party; byParty[k] = (byParty[k] || 0) - r.amount; });
+  const top = Object.entries(byParty).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const own = mr.filter(r => r.cat === "Own accounts").reduce((s, r) => s + Math.abs(r.amount), 0) / 2;
+  $("acSummary").innerHTML = !mr.length ? '<div class="empty">Nothing on the statements this month.</div>' :
+    tags([["In PKR " + fmt(inn), "good"], ["Out PKR " + fmt(out), "warn"], [(inn - out >= 0 ? "Net +PKR " : "Net -PKR ") + fmt(Math.abs(inn - out)), inn - out >= 0 ? "good" : "bad"], own ? "Moved between your accounts PKR " + fmt(own) : ""]) +
+    `<div class="ac-stack">${cats.map(([c, v]) => `<i style="width:${v / out * 100}%;background:${AC_CAT[c] || "var(--food-other)"}" title="${esc(c)}"></i>`).join("")}</div>` +
+    `<div class="ac-sum-grid"><ul class="plan-list">${cats.map(([c, v]) => `<li><i style="background:${AC_CAT[c] || "var(--food-other)"}"></i><span>${esc(c)}</span><span class="num">${fmt(v)}</span><span class="pct num">${Math.round(v / out * 100)}%</span></li>`).join("")}</ul>` +
+    `<div><span class="eyebrow">Where it went</span><ul class="ac-top">${top.map(([p, v]) => `<li><span>${esc(p)}</span><b class="num">PKR ${fmt(v)}</b></li>`).join("")}</ul></div></div>`;
+  /* category chips for the month */
+  const allCats = [...new Set(ST.rows.map(r => r.cat))].sort();
+  $("acCats").innerHTML = `<button type="button" class="chip small" data-ac-cat="" aria-pressed="${!acCat}">All</button>` + allCats.map(c => `<button type="button" class="chip small" data-ac-cat="${esc(c)}" aria-pressed="${acCat === c}"><span class="dot" style="background:${AC_CAT[c] || "var(--food-other)"}"></span>${esc(c)}</button>`).join("");
+  /* list: the chosen month, or every month when searching */
+  const q = $("acSearch").value.trim().toLowerCase();
+  let list = ST.rows.filter(r => (acAcct === "all" || r.acct === acAcct) && (!acCat || r.cat === acCat));
+  list = q ? list.filter(r => { const t = link(r); return [r.party, r.via, r.cat, (r.notes || []).join(" "), t ? t.note + " " + (t.review || "") : ""].join(" ").toLowerCase().includes(q); }) : list.filter(r => r.date.slice(0, 7) === m);
+  list = list.slice().reverse();
+  $("acCount").textContent = list.length + " shown" + (q ? " across all months" : "");
+  let last = "", h = "";
+  list.slice(0, 400).forEach(r => {
+    if (r.date !== last) { last = r.date; h += `<div class="ac-day">${esc(new Date(r.date + "T12:00").toLocaleDateString("en-GB", {weekday: "short", day: "numeric", month: "short", year: "numeric"}))}</div>`; }
+    const t = link(r), meal = t && MEALS[t.meal] ? MEALS[t.meal] : "";
+    const tg = [esc(r.via), r.acct === "bank" ? ["Bank", "due"] : "", [esc(r.cat), ""], r.fx ? [esc(r.fx), "date"] : "", meal ? [meal, "warn"] : "", r.acct === "nayapay" ? r.ts.slice(11) : ""];
+    h += `<div class="ac-row ${r.amount > 0 ? "in" : "out"}"><span class="ac-dot" style="background:${AC_CAT[r.cat] || "var(--food-other)"}"></span><div class="ac-main"><b>${esc(r.party)}</b>${tags(tg)}` +
+      (r.notes ? r.notes.map(n => `<div class="ac-note">${esc(n)}</div>`).join("") : "") +
+      (t ? `<div class="ac-order"><span class="tag good">In the app</span> ${esc(t.note || "")} ${t.category === "Food" ? rateBtn(t) : ""}</div>` :
+        (r.amount < 0 && ["Food", "Transport", "Shopping", "Transfers out"].includes(r.cat) && r.date >= cyc.start ? `<div class="ac-order"><button type="button" class="btn small ghost" data-ac-log="${esc(r.id)}">Log it in the app</button></div>` : "")) +
+      `</div><div class="ac-amt"><b class="num">${r.amount > 0 ? "+" : "-"}${fmt2(r.amount)}</b><small class="num">bal ${fmt2(r.balance)}</small></div></div>`;
+  });
+  $("acList").innerHTML = h || '<div class="empty">Nothing matches.</div>';
+}
+$("acMonth").addEventListener("change", renderAccounts);
+$("acSearch").addEventListener("input", () => { clearTimeout(window.acT); window.acT = setTimeout(renderAccounts, 150); });
+$("acAcct").addEventListener("click", e => { const b = e.target.closest("[data-ac-acct]"); if (!b) return; acAcct = b.dataset.acAcct; $("acAcct").querySelectorAll("[data-ac-acct]").forEach(x => x.setAttribute("aria-pressed", x === b)); renderAccounts(); });
+$("acCats").addEventListener("click", e => { const b = e.target.closest("[data-ac-cat]"); if (!b) return; acCat = b.dataset.acCat; renderAccounts(); });
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-ac-log]"); if (!b || !ST) return;
+  const r = ST.rows.find(x => x.id === b.dataset.acLog); if (!r) return;
+  openSheet(); if ($("sheet").hidden) return;
+  stmtPending = r.id; $("fDate").value = r.date; $("fAmount").value = Math.abs(r.amount);
+  const food = r.cat === "Food", hr = +r.ts.slice(11, 13);
+  if (food) { const ml = hr >= 4 && hr < 15 ? "nashta" : "dinner"; $("mealChips").querySelector(`[data-meal="${ml}"]`)?.click(); $("fSrc").value = r.party === "Foodpanda" ? "Foodpanda" : "Direct order"; }
+  else { $("fCat").value = r.cat === "Transport" ? "Transport" : "Other"; $("fSrc").value = "Card"; }
+  if (r.party !== "Foodpanda" && !/^Paid the rider/.test((r.notes || [""])[0])) { $("fPlace").value = r.party; onPlace(); }
+  $("fAmount").value = Math.abs(r.amount); renderCapHint();
+  toast("Add what you had, then Save");
+});
 })();

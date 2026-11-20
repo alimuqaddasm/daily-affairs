@@ -8,8 +8,8 @@
 <title>Daily Affairs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@500&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Noto+Nastaliq+Urdu:wght@400;600&family=Amiri:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
-<link rel="stylesheet" href="app.css?v=202611180543">
-<link rel="stylesheet" href="theme.css?v=202611180543">
+<link rel="stylesheet" href="app.css?v=202611201424">
+<link rel="stylesheet" href="theme.css?v=202611201424">
 </head>
 <body>
 <header class="bar">
@@ -20,7 +20,7 @@
     <div class="sync" id="sync" role="status">Not connected</div>
   </div>
   <nav class="tabs" id="tabs" aria-label="Sections">
-    <a href="#today">Today</a><a href="#planner">Planners</a><a href="#money">Money</a><a href="#khums">Khums</a><a href="#wajibat">Wajibat</a><a href="#wasiyat">Wasiyat</a><a href="#settings">Settings</a>
+    <a href="#today">Today</a><a href="#planner">Planners</a><a href="#money">Money</a><a href="#accounts">Accounts</a><a href="#khums">Khums</a><a href="#wajibat">Wajibat</a><a href="#wasiyat">Wasiyat</a><a href="#settings">Settings</a>
   </nav>
 </header>
 
@@ -136,6 +136,32 @@
 </section>
 
 <!-- ================= KHUMS ================= -->
+<section class="view" id="v-accounts" hidden>
+  <div class="page-head"><div><div class="eyebrow">From your NayaPay and bank statements, account numbers left out</div><h1>Accounts</h1></div><span id="acStamp"></span></div>
+  <div class="ac-cards" id="acCards"><div class="empty">Loading your statements...</div></div>
+  <section class="card" id="acMissingCard" hidden>
+    <div class="card-head"><h2>On the statement, not in the app</h2><span class="muted sm">This pay cycle. Tap Log to add it with what you had.</span></div>
+    <ul class="items" id="acMissing"></ul>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Month by month</h2><select id="acMonth" aria-label="Month"></select></div>
+    <div id="acSummary"></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Transactions</h2><span class="muted sm" id="acCount"></span></div>
+    <div class="ac-filters">
+      <div class="chips" id="acAcct" role="group" aria-label="Account">
+        <button type="button" class="chip" data-ac-acct="all" aria-pressed="true">Both accounts</button>
+        <button type="button" class="chip" data-ac-acct="nayapay" aria-pressed="false">NayaPay</button>
+        <button type="button" class="chip" data-ac-acct="bank" aria-pressed="false">Bank</button>
+      </div>
+      <input type="search" id="acSearch" placeholder="Search a name, restaurant or note (all months)" aria-label="Search transactions">
+    </div>
+    <div class="chips ac-cats" id="acCats" role="group" aria-label="Category"></div>
+    <div id="acList"></div>
+  </section>
+</section>
+
 <section class="view" id="v-khums" hidden>
   <div class="page-head"><div><div class="eyebrow">Sayyid al-Sistani · year ends 23 Ramadan · feeds the wasiyat</div><h1 class="bi">Khums <span class="ur" lang="ur">خمس</span></h1></div></div>
   <div class="row-2">
@@ -370,6 +396,6 @@
   <a href="#wajibat" data-bn="wajibat">Wajibat</a><a href="#planner" data-bn="planner">Plan</a>
 </nav>
 <div class="toast" id="toast" hidden></div>
-<script src="app.js?v=202611180543" defer></script>
+<script src="app.js?v=202611201424" defer></script>
 </body>
 </html>
