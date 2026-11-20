@@ -1098,7 +1098,17 @@ async function openAccounts(){
 }
 function fillAcMonths(){
   const ms = [...new Set(ST.rows.map(r => r.date.slice(0, 7)))].sort().reverse();
-  $("acMonth").innerHTML = ms.map(m => `<option value="${m}">${new Date(m + "-01T12:00").toLocaleDateString("en-GB", {month: "long", year: "numeric"})}</option>`).join("");
+  $("acMonth").innerHTML = '<optgroup label="Periods"><option value="r3">Last 3 months</option><option value="r6">Last 6 months</option><option value="r12">Last 12 months (full year)</option></optgroup><optgroup label="Single month">' + ms.map(m => `<option value="${m}">${new Date(m + "-01T12:00").toLocaleDateString("en-GB", {month: "long", year: "numeric"})}</option>`).join("") + '</optgroup>';
+  $("acMonth").value = ms[0];
+}
+/* the chosen period: one month (YYYY-MM) or the last N months counting this one */
+function acPeriod(){
+  const v = $("acMonth").value || "";
+  if (!/^r\d+$/.test(v)) return {months: [v], label: v, range: false};
+  const n = +v.slice(1), last = ST.rows.reduce((m, r) => r.date > m ? r.date : m, "").slice(0, 7), out = [];
+  let [y, mo] = last.split("-").map(Number);
+  for (let i = 0; i < n; i++) { out.unshift(y + "-" + String(mo).padStart(2, "0")); if (--mo === 0) { mo = 12; y--; } }
+  return {months: out, range: true};
 }
 const fmt2 = v => { const a = Math.abs(v); return (a % 1 ? a.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2}) : fmt(a)); };
 function stLinks(){
@@ -1121,15 +1131,25 @@ function renderAccounts(){
   $("acMissing").innerHTML = miss.map(r => `<li><div><div style="font-weight:700">${esc(r.party)}</div>${tags([[nice(r.date) + ", " + r.ts.slice(11), "date"], esc(r.via), [esc(r.cat), ""]])}</div>` +
     `<span class="mid" style="font-size:1.05rem">PKR ${fmt2(r.amount)}</span><button type="button" class="btn small" data-ac-log="${esc(r.id)}">Log it</button></li>`).join("");
   /* month summary */
-  const m = $("acMonth").value, mr = ST.rows.filter(r => r.date.slice(0, 7) === m && (acAcct === "all" || r.acct === acAcct));
+  const per = acPeriod(), inP = r => per.months.includes(r.date.slice(0, 7)), mr = ST.rows.filter(r => inP(r) && (acAcct === "all" || r.acct === acAcct));
   const ext = mr.filter(r => r.cat !== "Own accounts"), inn = ext.filter(r => r.amount > 0).reduce((s, r) => s + r.amount, 0), out = -ext.filter(r => r.amount < 0).reduce((s, r) => s + r.amount, 0);
   const byCat = {}; ext.filter(r => r.amount < 0).forEach(r => byCat[r.cat] = (byCat[r.cat] || 0) - r.amount);
   const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
   const byParty = {}; ext.filter(r => r.amount < 0).forEach(r => { const k = r.party === "Foodpanda" ? "Foodpanda" : r.party; byParty[k] = (byParty[k] || 0) - r.amount; });
   const top = Object.entries(byParty).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const own = mr.filter(r => r.cat === "Own accounts").reduce((s, r) => s + Math.abs(r.amount), 0) / 2;
-  $("acSummary").innerHTML = !mr.length ? '<div class="empty">Nothing on the statements this month.</div>' :
-    tags([["In PKR " + fmt(inn), "good"], ["Out PKR " + fmt(out), "warn"], [(inn - out >= 0 ? "Net +PKR " : "Net -PKR ") + fmt(Math.abs(inn - out)), inn - out >= 0 ? "good" : "bad"], own ? "Moved between your accounts PKR " + fmt(own) : ""]) +
+  /* month by month bars when a period is chosen */
+  const monthBars = !per.range ? "" : (() => {
+    const ms = per.months.map(mm => { const xs = mr.filter(r => r.date.slice(0, 7) === mm && r.cat !== "Own accounts");
+      return {mm, i: xs.filter(r => r.amount > 0).reduce((s, r) => s + r.amount, 0), o: -xs.filter(r => r.amount < 0).reduce((s, r) => s + r.amount, 0)}; });
+    const mx = Math.max(1, ...ms.map(x => Math.max(x.i, x.o)));
+    return `<div class="ac-months">${ms.map(x => `<button type="button" class="ac-mo" data-ac-month="${x.mm}" title="Open this month"><span class="ac-mo-bars"><i class="in" style="height:${x.i / mx * 100}%"></i><i class="out" style="height:${x.o / mx * 100}%"></i></span>` +
+      `<b>${new Date(x.mm + "-01T12:00").toLocaleDateString("en-GB", {month: "short"})}</b><small class="num">${x.i - x.o >= 0 ? "+" : "-"}${fmt(Math.abs(x.i - x.o) / 1000)}k</small></button>`).join("")}</div>` +
+      `<div class="legend ac-legend"><span><i style="background:var(--emerald)"></i>In</span><span><i style="background:var(--amber)"></i>Out</span><span class="muted">Tap a month to open it</span></div>`;
+  })();
+  const avgNote = per.range ? ["Average out PKR " + fmt(out / per.months.length) + " a month", "date"] : "";
+  $("acSummary").innerHTML = !mr.length ? '<div class="empty">Nothing on the statements in this period.</div>' :
+    tags([["In PKR " + fmt(inn), "good"], ["Out PKR " + fmt(out), "warn"], [(inn - out >= 0 ? "Net +PKR " : "Net -PKR ") + fmt(Math.abs(inn - out)), inn - out >= 0 ? "good" : "bad"], avgNote, own ? "Moved between your accounts PKR " + fmt(own) : ""]) + monthBars +
     `<div class="ac-stack">${cats.map(([c, v]) => `<i style="width:${v / out * 100}%;background:${AC_CAT[c] || "var(--food-other)"}" title="${esc(c)}"></i>`).join("")}</div>` +
     `<div class="ac-sum-grid"><ul class="plan-list">${cats.map(([c, v]) => `<li><i style="background:${AC_CAT[c] || "var(--food-other)"}"></i><span>${esc(c)}</span><span class="num">${fmt(v)}</span><span class="pct num">${Math.round(v / out * 100)}%</span></li>`).join("")}</ul>` +
     `<div><span class="eyebrow">Where it went</span><ul class="ac-top">${top.map(([p, v]) => `<li><span>${esc(p)}</span><b class="num">PKR ${fmt(v)}</b></li>`).join("")}</ul></div></div>`;
@@ -1139,11 +1159,11 @@ function renderAccounts(){
   /* list: the chosen month, or every month when searching */
   const q = $("acSearch").value.trim().toLowerCase();
   let list = ST.rows.filter(r => (acAcct === "all" || r.acct === acAcct) && (!acCat || r.cat === acCat));
-  list = q ? list.filter(r => { const t = link(r); return [r.party, r.via, r.cat, (r.notes || []).join(" "), t ? t.note + " " + (t.review || "") : ""].join(" ").toLowerCase().includes(q); }) : list.filter(r => r.date.slice(0, 7) === m);
+  list = q ? list.filter(r => { const t = link(r); return [r.party, r.via, r.cat, (r.notes || []).join(" "), t ? t.note + " " + (t.review || "") : ""].join(" ").toLowerCase().includes(q); }) : list.filter(inP);
   list = list.slice().reverse();
-  $("acCount").textContent = list.length + " shown" + (q ? " across all months" : "");
+  $("acCount").textContent = list.length + " shown" + (q ? " across all months" : list.length > 600 ? ", newest 600 listed" : "");
   let last = "", h = "";
-  list.slice(0, 400).forEach(r => {
+  list.slice(0, 600).forEach(r => {
     if (r.date !== last) { last = r.date; h += `<div class="ac-day">${esc(new Date(r.date + "T12:00").toLocaleDateString("en-GB", {weekday: "short", day: "numeric", month: "short", year: "numeric"}))}</div>`; }
     const t = link(r), meal = t && MEALS[t.meal] ? MEALS[t.meal] : "";
     const tg = [esc(r.via), r.acct === "bank" ? ["Bank", "due"] : "", [esc(r.cat), ""], r.fx ? [esc(r.fx), "date"] : "", meal ? [meal, "warn"] : "", r.acct === "nayapay" ? r.ts.slice(11) : ""];
@@ -1156,6 +1176,7 @@ function renderAccounts(){
   $("acList").innerHTML = h || '<div class="empty">Nothing matches.</div>';
 }
 $("acMonth").addEventListener("change", renderAccounts);
+document.addEventListener("click", e => { const b = e.target.closest("[data-ac-month]"); if (!b) return; $("acMonth").value = b.dataset.acMonth; renderAccounts(); });
 $("acSearch").addEventListener("input", () => { clearTimeout(window.acT); window.acT = setTimeout(renderAccounts, 150); });
 $("acAcct").addEventListener("click", e => { const b = e.target.closest("[data-ac-acct]"); if (!b) return; acAcct = b.dataset.acAcct; $("acAcct").querySelectorAll("[data-ac-acct]").forEach(x => x.setAttribute("aria-pressed", x === b)); renderAccounts(); });
 $("acCats").addEventListener("click", e => { const b = e.target.closest("[data-ac-cat]"); if (!b) return; acCat = b.dataset.acCat; renderAccounts(); });

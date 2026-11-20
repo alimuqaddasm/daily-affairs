@@ -431,3 +431,13 @@ td.r,th.r{white-space:nowrap}
 #acMissing li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center}
 @media (max-width:520px){#acMissing li{grid-template-columns:minmax(0,1fr) auto}#acMissing li .btn{grid-column:1/-1;justify-self:start}}
 .ac-sum-grid .plan-list{align-content:start}
+/* accounts: month bars for a period */
+.ac-months{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(44px,1fr);gap:6px;margin:14px 0 6px;overflow-x:auto;padding-bottom:4px}
+.ac-mo{all:unset;cursor:pointer;display:grid;justify-items:center;gap:4px;padding:6px 2px;border-radius:10px}
+.ac-mo:hover,.ac-mo:focus-visible{background:var(--sunk)}
+.ac-mo-bars{display:flex;align-items:flex-end;gap:3px;height:90px}
+.ac-mo-bars i{display:block;width:12px;border-radius:4px 4px 0 0;min-height:2px}
+.ac-mo-bars i.in{background:var(--emerald)} .ac-mo-bars i.out{background:var(--amber)}
+.ac-mo b{font-size:12px} .ac-mo small{font-size:10.5px;color:var(--muted)}
+.ac-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-bottom:6px}
+.ac-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
