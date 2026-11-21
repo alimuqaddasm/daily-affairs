@@ -232,7 +232,7 @@ function lastYearNote(kh){ const y = kh.years[0]; if (!y) return ""; return y.ye
 function usuals(){
   const since = addDays(todayIso(), -150), g = {};
   F().txns.forEach(t => {
-    if (t.category !== "Food" || t.date < since || !t.note || t.importedFrom === undefined && !t.vendor && t.note.indexOf(":") < 0) return;
+    if (t.category !== "Food" || t.kind === "refund" || t.guestPkr || t.date < since || !t.note || t.importedFrom === undefined && !t.vendor && t.note.indexOf(":") < 0) return;
     const vendor = (t.vendor || t.note.split(":")[0]).replace(/\s*\(WhatsApp\)\s*$/i, "").replace(/\s+-\s+.*$/, "").trim();
     if (!vendor || vendor.length > 40) return;
     const m = MEALS[t.meal] ? t.meal : "other", key = vendor + "|" + m;
@@ -424,8 +424,8 @@ function renderMeals(k){
   const caps = C().caps || {}, food = k.tx.filter(t => t.category === "Food");
   $("foodTotal").textContent = "PKR " + fmt(food.reduce((s,t)=>s+t.pkr,0)) + " on food this cycle";
   $("meals").innerHTML = Object.keys(MEALS).map(m => {
-    const rows = food.filter(t => t.meal === m), avg = rows.length ? rows.reduce((s,t)=>s+t.pkr,0)/rows.length : 0;
-    const over = rows.filter(t => t.pkr > (caps[m]||0)).length;
+    const rows = food.filter(t => t.meal === m && t.kind !== "refund"), my = t => (t.pkr || 0) - (t.guestPkr || 0), avg = rows.length ? rows.reduce((s,t)=>s+my(t),0)/rows.length : 0;
+    const over = rows.filter(t => my(t) > (caps[m]||0)).length;
     const cls = !rows.length ? "" : avg <= caps[m] ? "good" : avg <= caps[m]*1.15 ? "warn" : "bad";
     return '<div class="meal"><div class="name"><i style="background:'+MEAL_COLOR[m]+'"></i>'+MEALS[m]+'</div><div class="mid"><small>cap</small>'+fmt(caps[m]||0)+'</div>' +
       (rows.length ? tags(['Avg <b class="num">'+fmt(avg)+'</b>', rows.length+' order'+(rows.length===1?'':'s'), [over ? over+' over cap' : 'Within cap', cls]]) : tags(['No orders yet'])) + '</div>';
@@ -531,7 +531,7 @@ function renderTx(k){
   if (!rows.length){ $("txWrap").innerHTML = '<div class="empty">Nothing logged in this cycle yet. Add a spend on the Today tab.</div>'; return; }
   $("txWrap").innerHTML = '<table><thead><tr><th>Date</th><th>What</th><th>Category</th><th>Paid by</th><th class="r">Amount</th><th class="r">PKR</th><th><span style="position:absolute;left:-9999px">Delete</span></th></tr></thead><tbody>' +
     rows.map(t => '<tr><td>'+nice(t.date)+'</td><td>'+(t.meal && MEALS[t.meal] ? '<span class="tag"><i style="background:'+MEAL_COLOR[t.meal]+'"></i>'+MEALS[t.meal]+'</span> ' : '')+esc(t.note||"")+rateCell(t)+'</td>' +
-      '<td><span class="tag"><i style="background:'+(CAT_COLOR[t.category]||"var(--food-other)")+'"></i>'+esc(t.category)+'</span></td><td class="muted">'+esc(t.source||"")+'</td>' +
+      '<td><span class="tag"><i style="background:'+(CAT_COLOR[t.category]||"var(--food-other)")+'"></i>'+esc(t.kind === "refund" ? "Refund" : t.category)+'</span></td><td class="muted">'+esc(t.kind === "refund" ? ((t.refundTo||"").startsWith("credit:") ? "To Foodpanda credit" : "Back to card") : (t.paidFrom||"").startsWith("credit:") ? "Foodpanda credit" : t.source||"")+'</td>' +
       '<td class="r num">'+(t.currency==="PKR"?"":fmtC(t.amount,t.currency))+'</td><td class="r num">'+fmt(t.pkr)+'</td>' +
       '<td class="r"><button class="x" data-del="'+esc(t.id)+'" aria-label="Delete entry">✕</button></td></tr>').join("") + '</tbody></table>';
 }
@@ -821,7 +821,7 @@ $("addForm").addEventListener("submit", e => {
 function menuBook(){
   const book = {};
   F().txns.forEach(t => {
-    if (t.category !== "Food" || !t.note) return;
+    if (t.category !== "Food" || t.kind === "refund" || !t.note) return;
     const i0 = t.note.indexOf(":"), i = i0 < 0 ? t.note.length : i0;
     const place = t.note.slice(0, i).replace(/\s*\(WhatsApp\)\s*$/i, "").replace(/\s*\(usual\)\s*$/i, "").trim();
     if (!place || place.length > 50) return;
