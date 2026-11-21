@@ -441,3 +441,7 @@ td.r,th.r{white-space:nowrap}
 .ac-mo b{font-size:12px} .ac-mo small{font-size:10.5px;color:var(--muted)}
 .ac-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-bottom:6px}
 .ac-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+/* switch to the new look */
+.bar .new-look{text-decoration:none;font-family:"Fraunces",Georgia,serif;font-weight:500;border:1px solid color-mix(in srgb,#b3361d 45%,transparent);color:#b3361d;background:color-mix(in srgb,#b3361d 6%,var(--surface));border-radius:999px;padding:6px 14px;min-height:0}
+.bar .new-look:hover{background:color-mix(in srgb,#b3361d 12%,var(--surface))}
+@media (max-width:640px){.bar .new-look{padding:4px 10px;font-size:13px}}

@@ -1192,4 +1192,5 @@ document.addEventListener("click", e => {
   $("fAmount").value = Math.abs(r.amount); renderCapHint();
   toast("Add what you had, then Save");
 });
+document.addEventListener("click", e => { const a = e.target.closest("[data-view]"); if (!a) return; try { localStorage.setItem("dailyAffairs.view", a.dataset.view); } catch(err) {} });
 })();
