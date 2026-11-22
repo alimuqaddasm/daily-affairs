@@ -1781,6 +1781,13 @@ table.t tr.leaving td{opacity:0;transform:translateX(8px)}
 .side.rail:not(:hover):not(:focus-within) .btn.pri{font-size:0;gap:0;justify-content:center;padding:0}
 .side.rail .navbtn .ic,.side.rail .btn.pri .ic{flex:none}
 
+/* ================= sky art (illustrations supplied by the user) ================= */
+.t5-clock.has-art{background-size:cover;background-position:center 100%;background-repeat:no-repeat}
+.t5-clock.has-art::before,.t5-clock.has-art .mx-meteors,.t5-clock.has-art .t5-sun{display:none}
+.t5-clock.has-art.sky-dawn{background-image:linear-gradient(180deg,rgba(12,14,40,.5) 0%,rgba(12,14,40,.08) 45%,rgba(12,14,40,0) 70%,rgba(12,14,40,.2) 100%),url("sky/fajr.webp")}
+.t5-clock.has-art .t5-win{background:rgba(14,16,36,.32);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.t5-clock.has-art .t5-cd{text-shadow:0 2px 18px rgba(0,0,0,.35)}
+
 body{margin:0}
 a{color:#0f766e}a:hover{color:#115e59}
 /* live page additions */

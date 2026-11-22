@@ -559,6 +559,9 @@ function runCountdowns(){
 /* "5h 20m 03s", "7m 12s", "40s" */
 function fmtLeft(s){ s = Math.max(0, Math.round(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? h + "h " + m + "m " + String(x).padStart(2, "0") + "s" : m ? m + "m " + String(x).padStart(2, "0") + "s" : x + "s"; }
 
+/* sky art for the prayer clock, one per time of day; a phase without art keeps the plain night panel */
+const SKY_ART = {"sky-dawn": "sky/fajr.webp"};
+
 /* ===== Live store: the same private GitHub file and token as the classic view. Every change is a small
    function; on a conflict it is replayed on the newest copy, so two devices never overwrite each other. ===== */
 const Store = (() => {
@@ -1457,7 +1460,7 @@ class Component extends preact.Component {
         tk.sub = word + (plural ? " begin at " : " begins at ") + ptHm(nextW.a % 1440) + (nextW.tomorrow ? " tomorrow" : "") + ".";
         tk.aria = tk.pre + fmtLeft(left) + ". " + tk.sub; }
       { const sr = P5.sunrise, ss = P5.sunset, f = P5.fajr, mg = P5.maghrib, is = P5.isha, as = P5.asr;
-        tk.phase = nowF < f - 40 || nowF >= is + 30 ? "sky-night" : nowF < sr + 20 ? "sky-dawn" : nowF < P5.dhuhr - 90 ? "sky-morning" : nowF < as ? "sky-noon" : nowF < ss - 50 ? "sky-afternoon" : nowF < is + 30 ? "sky-dusk" : "sky-night"; tk.sky = typeof SKY_ART !== "undefined" && SKY_ART ? tk.phase + " has-art" : "";
+        tk.phase = nowF < f - 40 || nowF >= is + 30 ? "sky-night" : nowF < sr + 20 ? "sky-dawn" : nowF < P5.dhuhr - 90 ? "sky-morning" : nowF < as ? "sky-noon" : nowF < ss - 50 ? "sky-afternoon" : nowF < is + 30 ? "sky-dusk" : "sky-night"; tk.sky = SKY_ART[tk.phase] ? tk.phase + " has-art" : "";
         tk.sunX = (Math.max(0, Math.min(1, (nowF - sr) / Math.max(1, ss - sr))) * 100).toFixed(1); tk.sunY = (Math.sin(Math.PI * Math.max(0, Math.min(1, (nowF - sr) / Math.max(1, ss - sr)))) * 70).toFixed(1); }
       tk.ic = {urgent: tk.lvl === "urgent", calm: tk.lvl === "calm" || tk.lvl === "warn", rest: tk.lvl === "rest"};
       tk.wins = W.map(x => { const isOpen = open && open.k === x.k, past = !isOpen && nowF >= x.b && !(x.k === "maghribain" && open && open.k === "maghribain");
