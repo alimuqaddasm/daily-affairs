@@ -1895,6 +1895,18 @@ table.t tr.leaving td{opacity:0;transform:translateX(8px)}
 
 }
 
+/* ================= the brand goes to Today ================= */
+.brandbtn{border:0;background:none;font:inherit;color:inherit;text-align:start;cursor:pointer;border-radius:10px}
+.brandbtn:focus-visible{outline:2px solid var(--t1);outline-offset:2px}
+
+/* ================= fazilat ticker under the window strip ================= */
+.t5-fz{display:flex;align-items:center;gap:8px;flex-wrap:wrap;align-self:flex-start;margin-top:2px;padding:7px 12px;border-radius:999px;background:rgba(12,14,30,.72);color:#f4f1ea;font-size:13px;box-shadow:0 6px 18px -10px rgba(0,0,0,.6)}
+.t5-fz .ic{width:15px;height:15px;color:#ffd27a}
+.t5-fz-cd{font-family:var(--serif);font-weight:400;font-size:17px;color:#fff;font-variant-numeric:tabular-nums}
+.t5-fz-t{color:rgba(244,241,234,.85)}
+.t5-fz.soon{background:rgba(120,30,20,.8)}
+.t5-fz.soon .ic{color:#ffb4a2}
+
 body{margin:0}
 a{color:#0f766e}a:hover{color:#115e59}
 /* live page additions */
