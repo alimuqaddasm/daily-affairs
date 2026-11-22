@@ -560,7 +560,7 @@ function runCountdowns(){
 function fmtLeft(s){ s = Math.max(0, Math.round(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? h + "h " + m + "m " + String(x).padStart(2, "0") + "s" : m ? m + "m " + String(x).padStart(2, "0") + "s" : x + "s"; }
 
 /* sky art for the prayer clock, one per time of day; a phase without art keeps the plain night panel */
-const SKY_ART = {"sky-dawn": "sky/fajr.webp"};
+const SKY_ART = {"sky-dawn": "sky/fajr.webp", "sky-morning": "sky/morning.webp", "sky-noon": "sky/noon.webp", "sky-afternoon": "sky/afternoon.webp", "sky-dusk": "sky/maghrib.webp", "sky-night": "sky/night.webp"};
 
 /* ===== Live store: the same private GitHub file and token as the classic view. Every change is a small
    function; on a conflict it is replayed on the newest copy, so two devices never overwrite each other. ===== */
