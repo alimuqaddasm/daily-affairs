@@ -1713,6 +1713,74 @@ table.t tr.leaving td{opacity:0;transform:translateX(8px)}
 .t5-wic{flex:none}
 @container app (max-width:900px){.t5-wic{display:none}.t5-wn b{font-size:13px}}
 
+/* ================= v7: three columns, folding sidebar ================= */
+.t7-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,.85fr);gap:24px;align-items:start}
+.t7-col{display:flex;flex-direction:column;gap:24px;min-width:0}
+.t7-right .nd-card{position:sticky;top:24px}
+@container app (max-width:1240px){.t7-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.t7-right{grid-column:1/-1}.t7-right .nd-card{position:static}}
+@container app (max-width:900px){.t7-grid{display:flex;flex-direction:column;gap:16px}.t7-col{display:contents}.ml-card{order:1}.qd-card{order:2}.nd-card{order:3}.t7-left .cal-card{order:4}}
+
+/* sidebar: an icon rail that opens over the page on hover or keyboard focus */
+.side.rail{flex:0 0 68px;position:relative;z-index:35;background:transparent;border:0}
+.side.rail .side-in{width:68px;overflow:hidden;background:var(--side);border-inline-end:1px solid var(--line);transition:width .22s var(--ease),box-shadow .22s var(--ease);padding:20px 12px;height:100vh;min-height:0;box-sizing:border-box}
+.side.rail:hover .side-in,.side.rail:focus-within .side-in{width:248px;box-shadow:12px 0 32px -12px rgba(0,0,0,.25)}
+.side.rail .brand{white-space:nowrap;min-height:48px}
+.side.rail .brand b,.side.rail .brand .ur,.side.rail .side-foot p,.side.rail .navbtn .ur{transition:opacity .15s var(--ease)}
+.side.rail:not(:hover):not(:focus-within) .brand b,.side.rail:not(:hover):not(:focus-within) .brand .ur,.side.rail:not(:hover):not(:focus-within) .side-foot p,.side.rail:not(:hover):not(:focus-within) .navbtn .ur{opacity:0}
+.side.rail .brand{position:relative}
+.side.rail .brand::before{content:"DA";position:absolute;left:0;top:0;font-family:var(--serif);font-size:20px;line-height:40px;width:44px;text-align:center;color:var(--t1);border-radius:10px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line2);transition:opacity .15s}
+.side.rail:hover .brand::before,.side.rail:focus-within .brand::before{opacity:0}
+.side.rail .btn.pri{justify-content:flex-start;padding:0 12px;white-space:nowrap;overflow:hidden;gap:14px;min-width:44px}
+.side.rail .navbtn{white-space:nowrap;gap:16px;padding:0 12px}
+.side.rail .side-foot{white-space:nowrap}
+
+/* ================= the clock follows the sky ================= */
+.t5-sun{position:absolute;z-index:-1;width:120px;height:120px;margin:0 0 -60px -60px;border-radius:50%;pointer-events:none;display:none;
+  background:radial-gradient(circle,#fff8e1 0 18%,rgba(255,236,170,.75) 30%,rgba(255,220,140,.25) 50%,transparent 70%)}
+.t5-clock.sky-morning .t5-sun,.t5-clock.sky-noon .t5-sun,.t5-clock.sky-afternoon .t5-sun{display:block}
+.t5-clock.sky-dawn{background:radial-gradient(120% 90% at 50% 110%,rgba(255,170,140,.85),transparent 60%),linear-gradient(180deg,#2b2f5e,#7b5c8f 55%,#e7a08a)}
+.t5-clock.sky-morning{background:radial-gradient(100% 80% at 20% 100%,rgba(255,236,190,.7),transparent 60%),linear-gradient(180deg,#5aa0d8,#a8d4f0 70%,#e9f4fb)}
+.t5-clock.sky-noon{background:linear-gradient(180deg,#3d8fd6,#86c3ef 60%,#d6ecfa)}
+.t5-clock.sky-afternoon{background:radial-gradient(110% 90% at 85% 100%,rgba(255,206,130,.75),transparent 60%),linear-gradient(180deg,#5b93c9,#a9c9e0 55%,#f1d7a6)}
+.t5-clock.sky-dusk{background:radial-gradient(120% 90% at 50% 115%,rgba(255,130,80,.9),transparent 60%),linear-gradient(180deg,#252a52,#8a4d72 55%,#ef8f5c)}
+/* daylight skies are bright: switch to dark ink */
+.t5-clock.sky-morning,.t5-clock.sky-noon,.t5-clock.sky-afternoon{color:#14213a}
+.t5-clock.sky-morning .t5-cd,.t5-clock.sky-noon .t5-cd,.t5-clock.sky-afternoon .t5-cd{color:#0f1d33;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+.t5-clock.sky-morning :is(.t5-say,.t5-sub,.t5-kick,.t5-ws,.t5-wt),.t5-clock.sky-noon :is(.t5-say,.t5-sub,.t5-kick,.t5-ws,.t5-wt),.t5-clock.sky-afternoon :is(.t5-say,.t5-sub,.t5-kick,.t5-ws,.t5-wt){color:rgba(15,29,51,.82)}
+.t5-clock.sky-morning .t5-cd .cu i,.t5-clock.sky-noon .t5-cd .cu i,.t5-clock.sky-afternoon .t5-cd .cu i{color:rgba(15,29,51,.6)}
+.t5-clock.sky-morning .t5-win,.t5-clock.sky-noon .t5-win,.t5-clock.sky-afternoon .t5-win{background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7)}
+.t5-clock.sky-morning .t5-win.h-zohar,.t5-clock.sky-noon .t5-win.h-zohar,.t5-clock.sky-afternoon .t5-win.h-zohar{--w:#9a6206}
+.t5-clock.sky-morning .t5-win.h-fajr,.t5-clock.sky-noon .t5-win.h-fajr,.t5-clock.sky-afternoon .t5-win.h-fajr{--w:#3b4a8c}
+.t5-clock.sky-morning .t5-win.h-maghrib,.t5-clock.sky-noon .t5-win.h-maghrib,.t5-clock.sky-afternoon .t5-win.h-maghrib{--w:#963a53}
+.t5-clock.sky-morning .t5-q,.t5-clock.sky-noon .t5-q,.t5-clock.sky-afternoon .t5-q{color:#b3361d}
+.t5-clock.sky-morning .t5-fuse,.t5-clock.sky-noon .t5-fuse,.t5-clock.sky-afternoon .t5-fuse{background:rgba(15,29,51,.15)}
+.t5-clock.sky-morning .t5-wbar,.t5-clock.sky-noon .t5-wbar,.t5-clock.sky-afternoon .t5-wbar{background:rgba(15,29,51,.12)}
+.t5-clock.sky-morning .t5-kic,.t5-clock.sky-noon .t5-kic,.t5-clock.sky-afternoon .t5-kic{color:#0f1d33;background:rgba(255,255,255,.6)}
+.t5-clock.sky-morning::before,.t5-clock.sky-noon::before,.t5-clock.sky-afternoon::before,.t5-clock:is(.sky-morning,.sky-noon,.sky-afternoon) .mx-meteors{display:none}
+.t5-clock.sky-dawn::before,.t5-clock.sky-dusk::before{opacity:.2}
+/* urgent still wins: a red wash over any sky */
+.t5-clock.urgent{box-shadow:inset 0 0 0 999px rgba(200,40,20,.08)}
+
+/* ================= qaza buttons: icons only ================= */
+.da .qd-b span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.qd-acts{flex-direction:row;justify-content:center;gap:8px;padding:0}
+.qd-b{width:44px;height:44px;padding:0;border-radius:50%}
+.qd-b .ic{width:20px;height:20px}
+/* the qaza card reflows to rows when its column is narrow */
+.qd-card{container-type:inline-size;container-name:qd}
+@container qd (max-width:560px){
+  .qd-dials{grid-template-columns:minmax(0,1fr);gap:6px}
+  .qd{display:grid;grid-template-columns:60px minmax(0,1fr) auto;grid-template-areas:"face name acts" "face today acts";align-items:center;column-gap:12px;padding:8px 12px;background:linear-gradient(90deg,var(--h2),transparent 85%)}
+  .qd-face,.qd-ring{width:60px;height:60px}.qd-face{grid-area:face}.qd-ic{display:none}.qd-n{font-size:20px}
+  .qd-name{grid-area:name;flex-direction:row;gap:8px;align-items:baseline}.qd-name .ur{display:inline}
+  .qd-today{grid-area:today;text-align:start;min-height:0}
+  .qd-acts{grid-area:acts;margin:0}
+}
+.side.rail:not(:hover):not(:focus-within) .navbtn{font-size:0;gap:0}
+.side.rail:not(:hover):not(:focus-within) .navbtn .ur{display:none}
+.side.rail:not(:hover):not(:focus-within) .btn.pri{font-size:0;gap:0;justify-content:center;padding:0}
+.side.rail .navbtn .ic,.side.rail .btn.pri .ic{flex:none}
+
 body{margin:0}
 a{color:#0f766e}a:hover{color:#115e59}
 /* live page additions */
