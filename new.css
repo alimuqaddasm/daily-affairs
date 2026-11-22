@@ -1848,6 +1848,18 @@ table.t tr.leaving td{opacity:0;transform:translateX(8px)}
 .t5-clock.has-art.sky-dusk .t5-win.open{background:linear-gradient(160deg,color-mix(in srgb,var(--w) 30%,rgba(90,16,50,.45)),rgba(90,16,50,.3))}
 .t5-clock.has-art.sky-dusk .t5-win.past{opacity:.9}
 
+/* ================= window cards, option C (Strip), chosen on the canvas ================= */
+/* C, Strip: one dark bar split in three, no floating tiles */
+.t5-clock.has-art .t5-wins{gap:0!important;background:rgba(12,14,30,.78);border-radius:12px;overflow:hidden;box-shadow:0 10px 24px -12px rgba(0,0,0,.6)}
+.t5-clock.has-art .t5-win{background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important;border-radius:0!important;border-inline-start:1px solid rgba(255,255,255,.1);opacity:1!important}
+.t5-clock.has-art .t5-win:first-child{border-inline-start:0}
+.t5-clock.has-art .t5-win.open{background:color-mix(in srgb,var(--w) 20%,transparent)!important;box-shadow:inset 0 -3px 0 var(--w)!important}
+.t5-clock.has-art .t5-win.past :is(.t5-wn b,.t5-wt,.t5-ws){opacity:.55}
+.t5-clock.has-art .t5-win :is(.t5-wt,.t5-wt span,.t5-ws){color:#f4f1ea!important;text-shadow:none!important}
+.t5-clock.has-art .t5-win .t5-q{color:#ff9f86!important}
+.t5-clock.has-art .t5-win .t5-wn b{filter:none!important;text-shadow:none!important}
+.t5-clock.has-art .t5-win.h-fajr{--w:#a9b4ef}.t5-clock.has-art .t5-win.h-zohar{--w:#f2c063}.t5-clock.has-art .t5-win.h-maghrib{--w:#f39ab0}
+
 body{margin:0}
 a{color:#0f766e}a:hover{color:#115e59}
 /* live page additions */
