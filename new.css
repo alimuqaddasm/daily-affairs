@@ -1824,6 +1824,30 @@ table.t tr.leaving td{opacity:0;transform:translateX(8px)}
   -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 60%,transparent 78%);mask-image:linear-gradient(180deg,#000 0%,#000 60%,transparent 78%)}
 .t5-clock.has-art .t5-win{background:rgba(14,16,36,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
 
+/* window cards on sky art: bright frosted glass, crisp text, no grey film */
+.t5-clock.has-art .t5-win,.t5-clock.has-art:is(.sky-morning,.sky-noon,.sky-afternoon) .t5-win{
+  background:linear-gradient(160deg,rgba(255,255,255,.26),rgba(255,255,255,.08));
+  -webkit-backdrop-filter:blur(10px) saturate(1.6) brightness(1.08);backdrop-filter:blur(10px) saturate(1.6) brightness(1.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 1px rgba(255,255,255,.22),0 8px 24px -12px rgba(0,0,0,.35)}
+.t5-clock.has-art .t5-win.open,.t5-clock.has-art:is(.sky-morning,.sky-noon,.sky-afternoon) .t5-win.open{
+  background:linear-gradient(160deg,rgba(255,255,255,.38),color-mix(in srgb,var(--w) 22%,rgba(255,255,255,.1)));
+  box-shadow:inset 0 0 0 1.5px var(--w),inset 0 1px 0 rgba(255,255,255,.6),0 10px 28px -10px color-mix(in srgb,var(--w) 60%,transparent)}
+.t5-clock.has-art .t5-win.past{opacity:.82}
+.t5-clock.has-art .t5-wt,.t5-clock.has-art .t5-wt span{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.35)}
+.t5-clock.has-art .t5-q{color:#ffe1d6!important;font-weight:500}
+.t5-clock.has-art .t5-ws{color:rgba(255,255,255,.9);text-shadow:0 1px 6px rgba(0,0,0,.35)}
+.t5-clock.has-art .t5-win.open .t5-ws{color:#fff;font-weight:600}
+.t5-clock.has-art .t5-wn b{filter:brightness(1.25) saturate(1.2);text-shadow:0 1px 8px rgba(0,0,0,.3)}
+.t5-clock.has-art .t5-wbar{background:rgba(255,255,255,.3)}
+/* bright daytime skies: deeper sky-tinted glass so white text keeps its contrast */
+.t5-clock.has-art:is(.sky-morning,.sky-noon) .t5-win{background:linear-gradient(160deg,rgba(10,52,120,.42),rgba(10,52,120,.26));-webkit-backdrop-filter:blur(10px) saturate(1.5);backdrop-filter:blur(10px) saturate(1.5)}
+.t5-clock.has-art.sky-afternoon .t5-win{background:linear-gradient(160deg,rgba(28,46,96,.44),rgba(120,60,10,.24));-webkit-backdrop-filter:blur(10px) saturate(1.5);backdrop-filter:blur(10px) saturate(1.5)}
+.t5-clock.has-art:is(.sky-morning,.sky-noon,.sky-afternoon) .t5-win.open{background:linear-gradient(160deg,color-mix(in srgb,var(--w) 30%,rgba(10,40,100,.45)),rgba(10,40,100,.3))}
+.t5-clock.has-art:is(.sky-morning,.sky-noon,.sky-afternoon) .t5-win.past{opacity:.9}
+.t5-clock.has-art.sky-dusk .t5-win{background:linear-gradient(160deg,rgba(90,16,50,.42),rgba(120,30,40,.24));-webkit-backdrop-filter:blur(10px) saturate(1.4);backdrop-filter:blur(10px) saturate(1.4)}
+.t5-clock.has-art.sky-dusk .t5-win.open{background:linear-gradient(160deg,color-mix(in srgb,var(--w) 30%,rgba(90,16,50,.45)),rgba(90,16,50,.3))}
+.t5-clock.has-art.sky-dusk .t5-win.past{opacity:.9}
+
 body{margin:0}
 a{color:#0f766e}a:hover{color:#115e59}
 /* live page additions */
