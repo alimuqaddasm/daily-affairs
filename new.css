@@ -1818,6 +1818,12 @@ table.t tr.leaving td{opacity:0;transform:translateX(8px)}
 .t5-clock.has-art:is(.sky-morning,.sky-noon,.sky-afternoon) .t5-wbar{background:rgba(255,255,255,.2)}
 .t5-clock.has-art:is(.sky-morning,.sky-noon,.sky-afternoon) .t5-kic{color:#fff;background:rgba(14,22,48,.35)}
 
+/* sky art: smudge everything above the shrine so text and cards sit on soft colour; the shrine strip stays sharp */
+.t5-clock.has-art::before{display:block;content:"";position:absolute;inset:0;z-index:-1;opacity:1;background:none;
+  -webkit-backdrop-filter:blur(18px) saturate(1.15);backdrop-filter:blur(18px) saturate(1.15);
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 60%,transparent 78%);mask-image:linear-gradient(180deg,#000 0%,#000 60%,transparent 78%)}
+.t5-clock.has-art .t5-win{background:rgba(14,16,36,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+
 body{margin:0}
 a{color:#0f766e}a:hover{color:#115e59}
 /* live page additions */
