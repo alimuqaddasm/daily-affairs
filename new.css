@@ -1907,6 +1907,130 @@ table.t tr.leaving td{opacity:0;transform:translateX(8px)}
 .t5-fz.soon{background:rgba(120,30,20,.8)}
 .t5-fz.soon .ic{color:#ffb4a2}
 
+/* ================= Polish pass from the site audit ================= */
+
+/* --- shell: the rail opens over the page, never pushes it; closes after a click --- */
+.side.rail{flex:0 0 68px;position:relative;z-index:45}
+.side.rail .side-in{position:fixed;top:0;bottom:0;left:0;height:auto!important;min-height:0!important}
+.side.rail:focus-within:not(:hover):not(:has(:focus-visible)) .side-in{width:68px;box-shadow:none}
+.side.rail:not(:hover):not(:has(:focus-visible)) .brand b,.side.rail:not(:hover):not(:has(:focus-visible)) .brand .ur,.side.rail:not(:hover):not(:has(:focus-visible)) .side-foot p{opacity:0}
+.side.rail:not(:hover):not(:has(:focus-visible)) .navbtn,.side.rail:not(:hover):not(:has(:focus-visible)) .btn.pri{font-size:0;gap:0}
+.side.rail:not(:hover):not(:has(:focus-visible)) .brand::before{opacity:1}
+.side.rail:has(:focus-visible) .side-in{width:248px;box-shadow:12px 0 32px -12px rgba(0,0,0,.25)}
+.side.rail:has(:focus-visible) .brand::before{opacity:0}
+
+/* --- Today --- */
+@container app (max-width:900px){.t7-grid{align-items:stretch}}
+.qd-card{width:100%;box-sizing:border-box}
+.t7-right .nd-card{position:static;top:auto}
+@container app (min-width:1241px){.t7-right .nd-card{position:sticky;top:24px}}
+.t7-grid{align-items:start}
+@container app (max-width:900px){.t5-pace{width:100%;margin-inline:0}}
+.ml-box .ml-cap,.ml-box .ml-none{white-space:nowrap}
+.ml-box{padding:12px}
+.nd-sq{border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--kaffara-2);box-shadow:inset 0 0 0 1.5px var(--kaffara)}
+.nd-sq::before{content:"";width:12px;height:12px;border-radius:50%;background:var(--kaffara)}
+.nd-o::after{content:"\203A";margin-inline-start:auto;font-size:20px;color:var(--t3)}
+.nd-o{grid-template-columns:32px minmax(0,1fr) auto}
+.qd-log.empty .qd-days,.qd-log.empty .lbl{display:none}
+.qd-log.empty{grid-template-areas:"s"}
+.qd-log.empty .qd-streak{justify-self:start}
+.t5-kick .mx-ripple{flex:none;width:36px;height:36px}
+.t5-kick{min-height:36px}
+.da[data-theme="dark"] .qd-made{background:color-mix(in srgb,var(--h) 30%,#1e1a15);box-shadow:inset 0 0 0 1.5px var(--h)}
+.da[data-theme="dark"] .qd-made,.da[data-theme="dark"] .qd-made *{color:var(--h)}
+
+/* --- readable "passed" states instead of fading --- */
+.kt.past{opacity:1}
+.kt.past .kt-time,.kt.past .kt-l b,.kt.past .kt-l span{color:var(--t3)}
+.kt.past .kt-time{text-decoration:line-through;text-decoration-thickness:1px;text-decoration-color:color-mix(in srgb,var(--t3) 60%,transparent)}
+.t5-clock.has-art .t5-win.past :is(.t5-wn b,.t5-wt,.t5-ws){opacity:.72}
+
+/* --- Prayer times --- */
+.kt{grid-template-columns:max-content minmax(0,1fr);column-gap:14px}
+.pt-cols .choice{border-style:solid!important;border-color:color-mix(in srgb,var(--h) 35%,transparent)!important;color:var(--h)!important}
+.pt-cols .choice[aria-pressed="true"]{background:var(--h2)!important;border-color:var(--h)!important}
+.pg-prayers p.cap{max-width:72ch;font-size:13px;line-height:1.55}
+.pg-prayers details.more:not([open]){margin-bottom:0}
+.pt-check{align-items:baseline}
+.pt-t tr.is-today td{background:transparent}
+.pt-t tr.is-today td.dayc{box-shadow:inset 3px 0 0 var(--zohar,#8a5608)}
+.pt-t tbody tr:last-child td{border-bottom:1px solid var(--line)}
+.pt-month{max-height:none}
+.pt-dl{display:inline-block}
+
+/* --- Planners --- */
+@container app (max-width:900px){.trio{grid-template-columns:repeat(auto-fit,minmax(96px,1fr))}.trio .key{grid-column:1/-1}}
+.bigdate{min-width:0;flex-wrap:wrap}
+.ks-today span{background:var(--card);padding:0 4px;border-radius:4px}
+
+/* --- tables become cards on the phone --- */
+@container app (max-width:900px){
+  .table-box{overflow:visible}
+  table.t{display:block;min-width:0!important;width:100%}
+  table.t thead{display:none}
+  table.t tbody{display:flex;flex-direction:column;gap:8px}
+  table.t tbody tr{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+  table.t tbody td{display:block;border:0!important;padding:0!important;background:none!important;text-align:start!important}
+  table.t tbody td:first-child{flex-basis:100%;font-weight:500}
+  table.t tbody td.r{margin-inline-start:auto}
+  table.t tbody td.r:has(b){order:-1;margin-inline-start:auto}
+}
+
+/* --- Money and Accounts --- */
+.rate-chip{border:1px dashed var(--line2)!important;border-radius:999px!important;padding:2px 10px!important;background:var(--card)!important;font-size:12px}
+.rate-chip:hover{border-style:solid!important}
+.ac .fig.ok-t,.da .stat .fig.ok-t{font-size:inherit}
+.figs .stat .fig .total{border-bottom:0}
+.da[data-theme="dark"]{--t3:#9a9a95}
+.acard-1 .acard-mid,.acard-1 .acard-foot{visibility:hidden}
+.da[data-theme="dark"] .acard-1{background:linear-gradient(150deg,#4a3f2a,#2a2418 75%)!important}
+.da[data-theme="dark"] .acard-1,.da[data-theme="dark"] .acard-1 *{color:#f2e6cc!important}
+.cal-mark{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+
+/* --- Add spending sheet: aligned amount, no jump between modes --- */
+.overlay:not(.menu){align-items:flex-start}
+.overlay:not(.menu) .sheet{margin-top:min(10vh,96px)}
+@media (max-width:760px){.overlay:not(.menu){align-items:flex-end}.overlay:not(.menu) .sheet{margin-top:0;max-height:92dvh}}
+.da.is-device .overlay:not(.menu){align-items:flex-end}.da.is-device .overlay:not(.menu) .sheet{margin-top:0}
+.da .amount{align-items:baseline}
+.da .amount > span{font-size:16px;color:var(--t3)}
+.da .amount input{font-family:var(--serif)!important;font-size:48px!important;height:60px!important;max-width:6.5ch!important;text-align:start!important}
+.sheet-h h2{font-family:var(--serif);font-weight:400;font-size:22px}
+#addSave{margin-top:8px}
+.da[data-theme="dark"] .overlay{background:rgba(0,0,0,.6)}
+.da[data-theme="dark"] .sheet{border-color:var(--line2)}
+
+/* --- Khums --- */
+.calc > div{padding-inline:12px}
+
+/* --- Wajibat --- */
+.qrow .btn.sm:first-child{background:var(--qaza-2,var(--raised));color:var(--qaza,var(--t1));border-color:var(--qaza-3,var(--line2))}
+
+/* --- shared --- */
+.da.rich .card::before{top:-1px}
+.wrap-nb{white-space:nowrap}
+
+/* --- Add spending: the Save button can never be squashed away --- */
+@media (min-width:761px){.overlay:not(.menu) .sheet{max-height:calc(100dvh - min(10vh,96px) - 16px)}}
+.sheet > *, .sheet form > *, .sheet .form > *{flex-shrink:0}
+.sheet button.btn.pri.block, #addSave, .sheet .btn.pri:last-child{flex-shrink:0;min-height:44px}
+.sheet #addSave{position:sticky;bottom:0;z-index:2;box-shadow:0 0 0 6px var(--card),0 -12px 16px -6px var(--card)}
+.sheet .save-bar{position:sticky;bottom:-1px;background:var(--card);padding:10px 0 2px;margin-top:8px;z-index:2;box-shadow:0 -10px 14px -10px rgba(0,0,0,.12)}
+.ml-held{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.vc-held{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.vc-held h3{font:500 13px/1.3 var(--sans,Inter);margin:0;color:var(--t2)}
+.vc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
+.vc-row > div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.vc-row .cap{margin:0}
+
+/* --- Fajr: Imsak and the safe Fajr time lead; true dawn sits back --- */
+.kt.key .kt-time{font-size:30px;line-height:34px;color:var(--h)}
+.kt.key .kt-l b{color:var(--h);font-weight:600}
+.kt.dim .kt-time{font-size:16px;line-height:22px;color:var(--t3)}
+.kt.dim .kt-l b{font-weight:400;color:var(--t3)}
+.kt.dim .kt-l span{opacity:.85}
+
 body{margin:0}
 a{color:#0f766e}a:hover{color:#115e59}
 /* live page additions */
