@@ -1723,13 +1723,13 @@ table.t tr.leaving td{opacity:0;transform:translateX(8px)}
 /* sidebar: an icon rail that opens over the page on hover or keyboard focus */
 .side.rail{flex:0 0 68px;position:relative;z-index:35;background:transparent;border:0}
 .side.rail .side-in{width:68px;overflow:hidden;background:var(--side);border-inline-end:1px solid var(--line);transition:width .22s var(--ease),box-shadow .22s var(--ease);padding:20px 12px;height:100vh;min-height:0;box-sizing:border-box}
-.side.rail:hover .side-in,.side.rail:focus-within .side-in{width:248px;box-shadow:12px 0 32px -12px rgba(0,0,0,.25)}
+.side.rail:hover .side-in,.side.rail:has(:focus-visible) .side-in{width:248px;box-shadow:12px 0 32px -12px rgba(0,0,0,.25)}
 .side.rail .brand{white-space:nowrap;min-height:48px}
 .side.rail .brand b,.side.rail .brand .ur,.side.rail .side-foot p,.side.rail .navbtn .ur{transition:opacity .15s var(--ease)}
-.side.rail:not(:hover):not(:focus-within) .brand b,.side.rail:not(:hover):not(:focus-within) .brand .ur,.side.rail:not(:hover):not(:focus-within) .side-foot p,.side.rail:not(:hover):not(:focus-within) .navbtn .ur{opacity:0}
+.side.rail:not(:hover):not(:has(:focus-visible)) .brand b,.side.rail:not(:hover):not(:has(:focus-visible)) .brand .ur,.side.rail:not(:hover):not(:has(:focus-visible)) .side-foot p,.side.rail:not(:hover):not(:has(:focus-visible)) .navbtn .ur{opacity:0}
 .side.rail .brand{position:relative}
 .side.rail .brand::before{content:"DA";position:absolute;left:0;top:0;font-family:var(--serif);font-size:20px;line-height:40px;width:44px;text-align:center;color:var(--t1);border-radius:10px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line2);transition:opacity .15s}
-.side.rail:hover .brand::before,.side.rail:focus-within .brand::before{opacity:0}
+.side.rail:hover .brand::before,.side.rail:has(:focus-visible) .brand::before{opacity:0}
 .side.rail .btn.pri{justify-content:flex-start;padding:0 12px;white-space:nowrap;overflow:hidden;gap:14px;min-width:44px}
 .side.rail .navbtn{white-space:nowrap;gap:16px;padding:0 12px}
 .side.rail .side-foot{white-space:nowrap}
@@ -1776,9 +1776,9 @@ table.t tr.leaving td{opacity:0;transform:translateX(8px)}
   .qd-today{grid-area:today;text-align:start;min-height:0}
   .qd-acts{grid-area:acts;margin:0}
 }
-.side.rail:not(:hover):not(:focus-within) .navbtn{font-size:0;gap:0}
-.side.rail:not(:hover):not(:focus-within) .navbtn .ur{display:none}
-.side.rail:not(:hover):not(:focus-within) .btn.pri{font-size:0;gap:0;justify-content:center;padding:0}
+.side.rail:not(:hover):not(:has(:focus-visible)) .navbtn{font-size:0;gap:0}
+.side.rail:not(:hover):not(:has(:focus-visible)) .navbtn .ur{display:none}
+.side.rail:not(:hover):not(:has(:focus-visible)) .btn.pri{font-size:0;gap:0;justify-content:center;padding:0}
 .side.rail .navbtn .ic,.side.rail .btn.pri .ic{flex:none}
 
 /* ================= sky art (illustrations supplied by the user) ================= */
@@ -1912,13 +1912,6 @@ table.t tr.leaving td{opacity:0;transform:translateX(8px)}
 /* --- shell: the rail opens over the page, never pushes it; closes after a click --- */
 .side.rail{flex:0 0 68px;position:relative;z-index:45}
 .side.rail .side-in{position:fixed;top:0;bottom:0;left:0;height:auto!important;min-height:0!important}
-.side.rail:focus-within:not(:hover):not(:has(:focus-visible)) .side-in{width:68px;box-shadow:none}
-.side.rail:not(:hover):not(:has(:focus-visible)) .brand b,.side.rail:not(:hover):not(:has(:focus-visible)) .brand .ur,.side.rail:not(:hover):not(:has(:focus-visible)) .side-foot p{opacity:0}
-.side.rail:not(:hover):not(:has(:focus-visible)) .navbtn,.side.rail:not(:hover):not(:has(:focus-visible)) .btn.pri{font-size:0;gap:0}
-.side.rail:not(:hover):not(:has(:focus-visible)) .brand::before{opacity:1}
-.side.rail:has(:focus-visible) .side-in{width:248px;box-shadow:12px 0 32px -12px rgba(0,0,0,.25)}
-.side.rail:has(:focus-visible) .brand::before{opacity:0}
-
 /* --- Today --- */
 @container app (max-width:900px){.t7-grid{align-items:stretch}}
 .qd-card{width:100%;box-sizing:border-box}
@@ -2030,6 +2023,13 @@ table.t tr.leaving td{opacity:0;transform:translateX(8px)}
 .kt.dim .kt-time{font-size:16px;line-height:22px;color:var(--t3)}
 .kt.dim .kt-l b{font-weight:400;color:var(--t3)}
 .kt.dim .kt-l span{opacity:.85}
+
+/* --- Accounts: a third card for cash in hand --- */
+.cards-stage:has(.acard-2){height:340px}
+.acard-2{left:186px;top:146px;transform:rotate(-2deg);z-index:3;color:#123b2c;background:radial-gradient(120% 90% at 90% 0%,rgba(255,255,255,.55),transparent 55%),linear-gradient(150deg,#d9efe3,#9fd0b6 75%);box-shadow:0 24px 48px -18px rgba(18,70,48,.45),inset 0 1px 0 rgba(255,255,255,.7)}
+.da .acard-2,.da .acard-2 *{color:#123b2c}
+.acard-2 .acard-chip{display:none}
+@container app (max-width:900px){.acard-2{left:auto;right:8px;top:150px}}
 
 body{margin:0}
 a{color:#0f766e}a:hover{color:#115e59}

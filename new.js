@@ -1123,10 +1123,28 @@ class Component extends preact.Component {
       F(D).txns.forEach(t => { byId[t.id] = t; if (t.stmtId) byStmt[t.stmtId] = t; });
       const link = r => byStmt[r.id] || (r.txId && byId[r.txId]) || null;
       ac.stamp = "Updated " + nice(ST.generated);
-      ac.cards = Object.entries(ST.accounts).map(([kk, a], i) => ({i, kind: kk, title: a.title, bal: fmt2(a.balance), holder: a.holder, brand: kk === "nayapay" ? "NayaPay" : "Bank", type: kk === "nayapay" ? "Wallet and Visa card" : (a.kind || "Savings"),
-        on: s.acAcct === kk ? "on" : "", pressed: s.acAcct === kk ? "true" : "false", aria: (s.acAcct === kk ? "Show both accounts" : "Show only " + a.title) + ", balance PKR " + fmt2(a.balance),
+      /* live balances: the statement balance, then everything logged since it, plus account-only moves (not spending) */
+      const linked = new Set(); ST.rows.forEach(r => { if (r.txId) linked.add(r.txId); }); F(D).txns.forEach(t => { if (t.stmtId) linked.add(t.id); });
+      const NP_SRC = {"Card": 1, "Foodpanda": 1, "Direct order": 1}, moves = F(D).moves || [];
+      const sinceStmt = (asOf) => { const day = asOf.slice(0, 10); return F(D).txns.filter(t => (t.date > day || (t.date === day && !linked.has(t.id))) && !linked.has(t.id)); };
+      const liveOf = (kk, a) => { if (kk !== "nayapay") return {bal: a.balance, n: 0};
+        const tx = sinceStmt(a.asOf); let bal = a.balance, n = 0;
+        tx.forEach(t => { if (isRefund(t)) { if (!(t.refundTo || "").startsWith("credit:") && t.refundTo === "card") { bal += Math.abs(t.pkr || 0); n++; } return; }
+          if ((t.paidFrom || "").startsWith("credit:") || !NP_SRC[t.source]) return; bal -= (t.pkr || 0) - (t.creditUsed || 0); n++; });
+        moves.filter(m => m.acct === kk && m.date >= a.asOf.slice(0, 10)).forEach(m => { bal += +m.amount || 0; n++; });
+        return {bal: Math.round(bal * 100) / 100, n}; };
+      ac.cards = Object.entries(ST.accounts).map(([kk, a], i) => { const lv = liveOf(kk, a); return {i, kind: kk, title: a.title, bal: fmt2(lv.bal), holder: a.holder, brand: kk === "nayapay" ? "NayaPay" : "Bank", type: kk === "nayapay" ? "Wallet and Visa card" : (a.kind || "Savings"),
+        on: s.acAcct === kk ? "on" : "", pressed: s.acAcct === kk ? "true" : "false", aria: (s.acAcct === kk ? "Show all accounts" : "Show only " + a.title) + ", balance PKR " + fmt2(lv.bal),
         pick: () => self.setState({acAcct: self.state.acAcct === kk ? "all" : kk}),
-        tags: [{t: "As of " + nice(a.asOf.slice(0, 10)), c: "t-transport"}, {t: ST.rows.filter(r => r.acct === kk).length + " transactions", c: ""}, {t: "Since " + nice(a.from), c: ""}, {t: a.holder, c: ""}]}));
+        tags: (lv.n ? [{t: "Today, from your " + plural(lv.n, "entry", "entries") + " since the statement", c: "t-food"}, {t: "Statement PKR " + fmt2(a.balance) + " on " + nice(a.asOf.slice(0, 10)), c: ""}] : [{t: "As of " + nice(a.asOf.slice(0, 10)), c: "t-transport"}])
+          .concat([{t: ST.rows.filter(r => r.acct === kk).length + " transactions", c: ""}, {t: "Since " + nice(a.from), c: ""}, {t: a.holder, c: ""}])}; });
+      const cash = F(D).cash;
+      if (cash) { let cb = +cash.balance || 0, cn = 0; F(D).txns.filter(t => t.source === "Cash" && !isRefund(t) && (t.createdAt || t.date) > cash.asOf).forEach(t => { cb -= t.pkr || 0; cn++; });
+        moves.filter(m => m.acct === "cash" && m.date > cash.asOf.slice(0, 10)).forEach(m => { cb += +m.amount || 0; cn++; });
+        cb = Math.round(cb * 100) / 100;
+        ac.cards.push({i: 2, kind: "cash", title: cash.title || "Cash", bal: fmt2(cb), holder: "In hand", brand: "Cash", type: "Not in spending", on: s.acAcct === "cash" ? "on" : "", pressed: s.acAcct === "cash" ? "true" : "false",
+          aria: "Cash in hand, PKR " + fmt2(cb), pick: () => self.setState({acAcct: self.state.acAcct === "cash" ? "all" : "cash"}),
+          tags: [{t: "Set to PKR " + fmt2(cash.balance) + " on " + nice(cash.asOf.slice(0, 10)), c: "t-food"}].concat(cn ? [{t: plural(cn, "cash entry", "cash entries") + " since", c: ""}] : []).concat(cash.note ? [{t: cash.note, c: ""}] : [])}); }
       const logStmt = r => () => { const food = r.cat === "Food", hr = +r.ts.slice(11, 13), x = {add_date: r.date, add_amount: String(Math.abs(r.amount))}; let meal = "";
         if (food) { meal = hr >= 4 && hr < 15 ? "nashta" : "dinner"; x.add_cat = "Food"; x.add_src = r.party === "Foodpanda" ? "Foodpanda" : "Direct order"; }
         else { x.add_cat = r.cat === "Transport" ? "Transport" : "Other"; x.add_src = "Card"; }
